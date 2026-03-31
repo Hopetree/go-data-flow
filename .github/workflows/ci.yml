@@ -92,6 +92,7 @@ jobs:
         with:
           version: latest
           args: --timeout=5m
+          go-version: '1.25'
 
   vet:
     name: Vet
