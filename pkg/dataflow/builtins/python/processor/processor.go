@@ -127,7 +127,7 @@ func (p *Processor) Process(ctx context.Context, in <-chan types.Record, out cha
 
 	// 等待 Python 进程退出
 	if closeErr := p.runner.Close(); closeErr != nil {
-		return fmt.Errorf("Python 进程退出异常: %w", closeErr)
+			return fmt.Errorf("python process exit abnormal: %w", closeErr)
 	}
 
 	// 优先返回读取错误

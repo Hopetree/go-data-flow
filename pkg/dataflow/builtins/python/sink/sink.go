@@ -90,7 +90,7 @@ func (s *Sink) Consume(ctx context.Context, in <-chan types.Record) error {
 
 	// 等待 Python 进程处理完毕并退出
 	if err := s.runner.Close(); err != nil {
-		return fmt.Errorf("Python 进程退出异常: %w", err)
+			return fmt.Errorf("python process exit abnormal: %w", err)
 	}
 
 	return nil

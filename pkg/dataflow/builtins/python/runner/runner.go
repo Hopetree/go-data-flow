@@ -88,7 +88,7 @@ func New(cfg Config) (*Runner, error) {
 
 	// 验证脚本存在
 	if _, err := os.Stat(absPath); err != nil {
-		return nil, fmt.Errorf("Python 脚本不存在: %s: %w", absPath, err)
+		return nil, fmt.Errorf("python script not found: %s: %w", absPath, err)
 	}
 
 	pythonExec := cfg.PythonExec
@@ -305,14 +305,14 @@ func (r *Runner) Close() error {
 			select {
 			case err := <-done:
 				if err != nil {
-					closeErr = fmt.Errorf("Python 进程退出异常: %w", err)
+					closeErr = fmt.Errorf("python process exit abnormal: %w", err)
 				}
 			case <-time.After(processExitTimeout):
 				// 超时，杀死整个进程组
 				if killErr := syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL); killErr != nil {
 					logger.Warn("强制杀死 Python 进程失败: %v", killErr)
 				}
-				closeErr = fmt.Errorf("Python 进程超时未退出，已强制杀死")
+				closeErr = fmt.Errorf("python process timed out, forcibly killed")
 			}
 		}
 	})
