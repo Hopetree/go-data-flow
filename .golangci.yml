@@ -1,6 +1,4 @@
-run:
-  timeout: 5m
-  modules-download-mode: readonly
+version: "2"
 
 linters:
   enable:
@@ -10,43 +8,32 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - gofmt
-    - goimports
     - misspell
     - revive
     - shadow
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
 
-  revive:
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - "checkPrivateReceivers"
+            - "sayRepetitiveInsteadOfStutters"
+
+  exclusions:
     rules:
-      - name: exported
-        arguments:
-          - "checkPrivateReceivers"
-          - "sayRepetitiveInsteadOfStutters"
+      - path: _test\.go
+        linters:
+          - revive
+        text: "should not use print"
+      - path: generated\.go
+        linters:
+          - all
 
 issues:
-  exclude-rules:
-    # 测试文件中允许使用 fmt.Print
-    - path: _test\.go
-      linters:
-        - revive
-      text: "should not use print"
-
-    # 生成的代码可以跳过检查
-    - path: generated\.go
-      linters:
-        - all
-
   max-issues-per-linter: 50
   max-same-issues: 10
-
-output:
-  formats:
-    text:
-      path: stdout
-      print-issued-lines: true
-      print-linter-name: true
