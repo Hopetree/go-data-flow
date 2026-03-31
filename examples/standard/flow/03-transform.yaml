@@ -1,0 +1,26 @@
+# 示例3: 带转换处理器的数据流
+# 添加新字段和重命名字段
+
+name: transform-flow
+buffer_size: 100
+
+source:
+  name: source-generator-sequence
+  config:
+    count: 5
+
+processors:
+  - name: processor-transform-field
+    config:
+      add:
+        processed: true
+        app_name: go-data-flow
+      mapping:
+        id: record_id
+        value: record_value
+
+sink:
+  name: sink-output-console
+  config:
+    format: json
+    limit: 10

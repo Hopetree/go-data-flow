@@ -1,0 +1,28 @@
+# 示例: Python 端到端 ETL 流水线
+# 使用 Python 脚本分别实现 Source、Processor、Sink
+# 运行: go run ./cmd/dataflow/ -c examples/standard/flow/16-python-etl.yaml
+
+name: python-etl-example
+buffer_size: 100
+
+# Python Source: 生成内存数据
+source:
+  name: source-python-script
+  config:
+    script: ./examples/standard/scripts/source_generate.py
+
+# Python Processor: 字段转换（转大写 + 添加 processed 标记）
+processors:
+  - name: processor-python-script
+    config:
+      script: ./examples/standard/scripts/processor_transform.py
+
+# Python Sink: 输出到控制台
+# sink:
+#   name: sink-python-script
+#   config:
+#     script: ./examples/standard/scripts/sink_console.py
+sink:
+  name: sink-output-console
+  config:
+    format: json

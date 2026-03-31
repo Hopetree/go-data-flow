@@ -1,0 +1,52 @@
+# 示例: 表达式过滤器数据流
+# 演示使用表达式语言进行复杂条件过滤
+
+name: expr-filter-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - id: 1
+        status: active
+        score: 85
+        role: admin
+        email: alice@company.com
+        message: "task completed successfully"
+      - id: 2
+        status: inactive
+        score: 45
+        role: user
+        email: bob@test.com
+        message: "error: connection timeout"
+      - id: 3
+        status: active
+        score: 92
+        role: user
+        email: charlie@company.com
+        message: "process started"
+      - id: 4
+        status: pending
+        score: 78
+        role: user
+        email: dave@example.com
+        message: "error: disk full"
+      - id: 5
+        status: active
+        score: 95
+        role: admin
+        email: eve@company.com
+        message: "backup completed"
+
+processors:
+  # 使用表达式过滤器进行复杂条件过滤
+  # 条件: 状态为 active 或角色为 admin，且分数 >= 60，且邮箱是公司域名
+  - name: processor-expr-filter
+    config:
+      expression: "(status == 'active' || role == 'admin') && score >= 60 && str_hasSuffix(email, '@company.com')"
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

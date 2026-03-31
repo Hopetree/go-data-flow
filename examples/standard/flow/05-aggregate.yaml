@@ -1,0 +1,35 @@
+# 示例5: 聚合处理
+# 按分组字段聚合数据
+
+name: aggregate-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - category: A
+        value: 10
+      - category: B
+        value: 20
+      - category: A
+        value: 15
+      - category: A
+        value: 25
+      - category: B
+        value: 30
+      - category: C
+        value: 40
+
+processors:
+  - name: processor-aggregate-group
+    config:
+      group_by:
+        - category
+      aggregates:
+        value: count
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

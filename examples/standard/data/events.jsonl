@@ -1,0 +1,5 @@
+{"event_id": "evt_001", "service": "api-gateway", "level": "INFO", "message": "请求处理完成", "latency_ms": 12, "status_code": 200, "timestamp": "2024-06-15T10:30:00Z"}
+{"event_id": "evt_002", "service": "user-service", "level": "WARN", "message": "响应时间超过阈值", "latency_ms": 850, "status_code": 200, "timestamp": "2024-06-15T10:30:01Z"}
+{"event_id": "evt_003", "service": "api-gateway", "level": "ERROR", "message": "上游服务不可用", "latency_ms": 5000, "status_code": 503, "timestamp": "2024-06-15T10:30:02Z"}
+{"event_id": "evt_004", "service": "order-service", "level": "INFO", "message": "订单创建成功", "latency_ms": 45, "status_code": 201, "timestamp": "2024-06-15T10:30:03Z"}
+{"event_id": "evt_005", "service": "payment-service", "level": "INFO", "message": "支付回调确认", "latency_ms": 23, "status_code": 200, "timestamp": "2024-06-15T10:30:04Z"}

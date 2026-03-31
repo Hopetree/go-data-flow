@@ -1,0 +1,34 @@
+# 示例4: CSV 文件处理
+# 从 CSV 文件读取，转换后写入另一个 CSV 文件
+
+name: csv-flow
+buffer_size: 1000
+
+source:
+  name: source-csv-file
+  config:
+    file_path: "./examples/standard/data/input.csv"
+    separator: ","
+    has_header: true
+    column_types:
+      id: int
+      price: float
+
+processors:
+  - name: processor-transform-field
+    config:
+      add:
+        processed_at: "2024-01-01"
+      remove:
+        - temp_field
+
+sink:
+  name: sink-csv-file
+  config:
+    file_path: "./examples/standard/data/result.csv"
+    separator: ","
+    headers:
+      - id
+      - name
+      - price
+      - processed_at

@@ -1,0 +1,54 @@
+# 示例9: 日志过滤 - 使用表达式过滤器处理日志数据
+# 演示字符串匹配和正则表达式功能
+
+name: log-filter-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - timestamp: "2024-01-15T10:00:00Z"
+        level: ERROR
+        message: "Database connection failed"
+        service: "api-server"
+        trace_id: "abc-123"
+      - timestamp: "2024-01-15T10:01:00Z"
+        level: INFO
+        message: "Request processed successfully"
+        service: "api-server"
+        trace_id: "def-456"
+      - timestamp: "2024-01-15T10:02:00Z"
+        level: WARN
+        message: "High memory usage detected"
+        service: "monitor"
+        trace_id: null
+      - timestamp: "2024-01-15T10:03:00Z"
+        level: ERROR
+        message: "Failed to connect to redis"
+        service: "cache-worker"
+        trace_id: "ghi-789"
+      - timestamp: "2024-01-15T10:04:00Z"
+        level: DEBUG
+        message: "Processing batch job"
+        service: "batch-processor"
+        trace_id: null
+      - timestamp: "2024-01-15T10:05:00Z"
+        level: INFO
+        message: "User login successful"
+        service: "auth-service"
+        trace_id: "jkl-012"
+
+processors:
+  # 过滤出需要关注的日志:
+  # 1. 错误级别日志
+  # 2. 或者警告级别且来自监控服务的日志
+  # 3. 且必须有 trace_id（可追踪）
+  - name: processor-expr-filter
+    config:
+      expression: "(level == 'ERROR' || (level == 'WARN' && service == 'monitor')) && trace_id != nil"
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

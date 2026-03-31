@@ -1,0 +1,6 @@
+id,name,category,price,stock,temp_field
+1,笔记本,电子产品,5999.00,150,ignore
+2,机械键盘,电脑外设,399.50,200,ignore
+3,显示器,电子产品,2499.00,80,ignore
+4,无线鼠标,电脑外设,129.00,300,ignore
+5,USB-C 扩展坞,电脑外设,259.00,120,ignore

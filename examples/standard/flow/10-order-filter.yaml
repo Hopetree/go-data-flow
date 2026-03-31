@@ -1,0 +1,78 @@
+# 示例10: 订单过滤 - 使用表达式过滤器处理业务数据
+# 演示复杂业务逻辑和嵌套字段访问
+
+name: order-filter-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - order_id: "ORD-001"
+        status: completed
+        amount: 1500.00
+        customer:
+          id: "C001"
+          name: "Alice"
+          level: gold
+          region: "north"
+        items: 5
+        tags: ["urgent", "priority"]
+      - order_id: "ORD-002"
+        status: pending
+        amount: 200.00
+        customer:
+          id: "C002"
+          name: "Bob"
+          level: bronze
+          region: "south"
+        items: 2
+        tags: ["normal"]
+      - order_id: "ORD-003"
+        status: completed
+        amount: 3000.00
+        customer:
+          id: "C003"
+          name: "Charlie"
+          level: platinum
+          region: "east"
+        items: 10
+        tags: ["bulk", "corporate"]
+      - order_id: "ORD-004"
+        status: cancelled
+        amount: 500.00
+        customer:
+          id: "C004"
+          name: "Diana"
+          level: silver
+          region: "west"
+        items: 3
+        tags: ["normal"]
+      - order_id: "ORD-005"
+        status: completed
+        amount: 800.00
+        customer:
+          id: "C005"
+          name: "Eve"
+          level: gold
+          region: "north"
+        items: 4
+        tags: ["priority"]
+
+processors:
+  # 过滤高价值订单:
+  # 条件:
+  # 1. 订单状态为 completed
+  # 2. 且满足以下任一条件:
+  #    a. 客户等级为 platinum 或 gold
+  #    b. 订单金额 >= 1000
+  #    c. 商品数量 >= 5
+  # 3. 且客户来自 north 或 east 区域
+  - name: processor-expr-filter
+    config:
+      expression: "status == 'completed' && (customer.level in ['platinum', 'gold'] || amount >= 1000 || items >= 5) && customer.region in ['north', 'east']"
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

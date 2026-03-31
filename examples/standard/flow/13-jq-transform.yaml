@@ -1,0 +1,71 @@
+# 示例13: jq 表达式转换 - 使用 jq 语法进行复杂数据转换
+# 演示 jq 语法的强大转换能力
+
+name: jq-transform-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - order_id: "O001"
+        customer:
+          id: "C001"
+          name: "Alice"
+          level: "gold"
+        shipping:
+          city: "New York"
+          address: "123 Main St"
+        items:
+          - sku: "A001"
+            name: "Laptop"
+            price: 999.99
+            qty: 1
+          - sku: "B002"
+            name: "Mouse"
+            price: 25
+            qty: 2
+      - order_id: "O002"
+        customer:
+          id: "C002"
+          name: "Bob"
+          level: "bronze"
+        shipping:
+          city: "Boston"
+          address: "456 Oak Ave"
+        items:
+          - sku: "C003"
+            name: "Keyboard"
+            price: 75
+            qty: 1
+
+processors:
+  # 使用 jq 进行复杂转换:
+  # 1. 展开订单中的商品数组
+  # 2. 保留订单和客户信息
+  # 3. 计算每行的小计
+  - name: processor-jq-transform
+    config:
+      # 复杂的 jq 表达式：
+      # - 展开数组并保留父级字段
+      # - 计算衍生字段
+      query: |
+        . as $order |
+        .items[] |
+        {
+          order_id: $order.order_id,
+          customer_id: $order.customer.id,
+          customer_name: $order.customer.name,
+          customer_level: $order.customer.level,
+          shipping_city: $order.shipping.city,
+          sku,
+          product_name: .name,
+          unit_price: .price,
+          quantity: .qty,
+          subtotal: (.price * .qty)
+        }
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

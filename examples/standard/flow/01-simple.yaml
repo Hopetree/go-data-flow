@@ -1,0 +1,24 @@
+# 示例1: 简单数据流
+# 从内存数据读取，输出到控制台
+
+name: simple-flow
+buffer_size: 10
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - id: 1
+        name: Alice
+        age: 30
+      - id: 2
+        name: Bob
+        age: 25
+      - id: 3
+        name: Charlie
+        age: 35
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

@@ -1,0 +1,55 @@
+# 编译输出
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试相关
+*.test
+*.out
+coverage.txt
+coverage.html
+coverage.out
+
+# Go 工作空间
+/go.work
+/go.work.sum
+
+# IDE 相关
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+/log/
+/dataflow/log
+
+# 部署二进制
+/dataflow/bin/*
+!/dataflow/bin/.gitkeep
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.log
+
+# 环境配置
+.env
+.env.local
+*.env
+
+# 依赖目录
+/vendor/
+
+# Claude Code
+.claude/
+CLAUDE.local.md

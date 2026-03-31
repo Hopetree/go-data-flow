@@ -1,0 +1,25 @@
+# 示例6: JSON Lines 文件处理
+# 从 JSON Lines 文件读取，输出到控制台
+
+name: json-flow
+buffer_size: 500
+
+source:
+  name: source-json-file
+  config:
+    file_path: "./examples/standard/data/events.jsonl"
+    format: lines
+    batch_size: 0
+
+processors:
+  - name: processor-transform-field
+    config:
+      add:
+        source: json-file
+
+sink:
+  name: sink-json-file
+  config:
+    file_path: "./examples/standard/data/events_processed.json"
+    format: array
+    indent: "  "

@@ -1,0 +1,26 @@
+# 示例: 多进程 Python Processor
+# Go 单线程发送数据，Python 内部用多进程并行处理
+# 适用于 CPU 密集型场景（如模型推理、复杂计算）
+# 运行: go run ./cmd/dataflow/ -c examples/standard/flow/17-python-multiprocess.yaml
+
+name: python-multiprocess-example
+buffer_size: 100
+
+# 生成 20 条测试数据
+source:
+  name: source-python-script
+  config:
+    script: ./examples/standard/scripts/source_batch.py
+
+# 多进程 Processor: 使用 Python multiprocessing 并行计算
+processors:
+  - name: processor-python-script
+    config:
+      script: ./examples/standard/scripts/processor_multiprocess.py
+      args:
+        - "4"
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

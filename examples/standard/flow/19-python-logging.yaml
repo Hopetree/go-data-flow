@@ -1,0 +1,24 @@
+# 示例: Python 脚本使用 logging 模块输出日志
+# Go 框架自动解析日志级别，映射到对应的 Go 日志级别
+# 运行: go run ./cmd/dataflow/ -c examples/standard/flow/19-python-logging.yaml
+
+name: python-logging-example
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - { "id": 1, "name": "  alice  " }
+      - { "id": 2, "name": "bob" }
+      - { "id": 3, "name": "  charlie  " }
+
+processors:
+  - name: processor-python-script
+    config:
+      script: ./examples/standard/scripts/processor_with_logging.py
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

@@ -1,0 +1,42 @@
+# 示例12: 数组展开 - 将数组元素展开为多条记录
+# 演示 extract_flatten 功能
+
+name: flatten-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - order_id: "O001"
+        customer: "Alice"
+        items:
+          - sku: "A001"
+            name: "Laptop"
+            qty: 1
+            price: 999.99
+          - sku: "A002"
+            name: "Mouse"
+            qty: 2
+            price: 25.00
+      - order_id: "O002"
+        customer: "Bob"
+        items:
+          - sku: "B001"
+            name: "Keyboard"
+            qty: 1
+            price: 75.00
+
+processors:
+  # 提取 items 数组并展开为多条记录
+  # 保留 order_id 和 customer 字段以便追踪
+  - name: processor-transform-field
+    config:
+      extract: items
+      extract_flatten: true
+      extract_keep: [order_id, customer]
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

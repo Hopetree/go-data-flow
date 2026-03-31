@@ -1,0 +1,57 @@
+# 示例2: 条件过滤数据流
+# 演示各种过滤操作符的使用
+
+name: filter-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - id: 1
+        status: active
+        score: 85
+        email: alice@example.com
+      - id: 2
+        status: inactive
+        score: 45
+        email: bob@test.com
+      - id: 3
+        status: active
+        score: 92
+        email: charlie@example.com
+      - id: 4
+        status: pending
+        score: 78
+        email: dave@example.com
+      - id: 5
+        status: active
+        score: 95
+        email: eve@company.com
+
+processors:
+  # 等于比较 - 过滤状态为 active 的记录
+  - name: processor-condition-filter
+    config:
+      field: status
+      op: eq
+      value: active
+
+  # 大于比较 - 过滤分数 >= 60 的记录
+  - name: processor-condition-filter
+    config:
+      field: score
+      op: gte
+      value: 60
+
+  # in 操作 - 过滤特定邮箱域名
+  - name: processor-condition-filter
+    config:
+      field: email
+      op: suffix
+      value: "@example.com"
+
+sink:
+  name: sink-output-console
+  config:
+    format: json

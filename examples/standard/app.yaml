@@ -1,0 +1,49 @@
+# 应用配置 — 标准示例（仅使用内置组件，无需外部依赖）
+# 使用方式: go run ./cmd/dataflow -a examples/standard/app.yaml -c examples/standard/flow/01-simple.yaml
+
+# 应用名称，用于日志和监控标识
+name: dataflow
+
+# 是否并行运行多个 Flow
+# - true:  多个 Flow 并行执行（默认，适用于独立数据流场景）
+# - false: 多个 Flow 顺序执行（适用于有依赖关系的场景）
+# 注意：单个 Flow 的 Source/Processor/Sink 始终按 Source→Processor→Sink 顺序处理
+parallel: true
+
+# flow 中各阶段之间 channel 的缓冲区大小
+# 每个 flow 配置可以单独设置，优先级 flow.yaml > app.yaml
+buffer_size: 100
+
+# Prometheus 指标配置
+metrics:
+  # 是否启用 Prometheus 指标 HTTP 服务，启用后可通过 http://localhost:9190/metrics 访问
+  enabled: false
+  # HTTP 监听地址，默认 :9090
+  addr: ":9190"
+  # metrics 暴露路径，默认 /metrics
+  path: "/metrics"
+  # 指标命名空间前缀（如 dataflow_records_in_total），默认 dataflow
+  namespace: "dataflow"
+
+# 日志配置
+log:
+  # 日志级别: debug, info, warn, error，默认 info
+  level: debug
+  # 日志格式: text（人类可读）或 json（结构化，适合日志采集系统），默认 text
+  format: text
+  # 输出目标: stdout, stderr, 或文件路径
+  # 设为文件路径时自动启用日志切割（见下方配置）
+  output: log/dataflow.log
+  # 日志前缀，默认 [dataflow]
+  prefix: "[dataflow]"
+
+  # 以下为日志文件切割配置（仅当 output 为文件路径时生效）
+
+  # 单个日志文件最大大小（MB），超过自动切割，默认 100
+  max_size: 100
+  # 保留的旧日志文件最大数量，默认 5
+  max_backups: 5
+  # 保留旧日志文件的最大天数，默认 30
+  max_age: 30
+  # 是否压缩旧日志文件（.gz 格式），默认 false
+  compress: true

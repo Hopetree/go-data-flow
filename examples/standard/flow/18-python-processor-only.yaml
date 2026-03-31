@@ -1,0 +1,35 @@
+# 示例: Go 原生 Source/Sink + Python Processor
+# Go 负责数据读取和写入（高性能），Python 只负责复杂业务逻辑
+# 运行: go run ./cmd/dataflow/ -c examples/standard/flow/18-python-processor-only.yaml
+
+name: python-processor-only
+buffer_size: 100
+
+# Go 原生 Source: 从静态配置读取数据
+source:
+  name: source-static-data
+  config:
+    data:
+      - { "name": "  alice  ", "status": "active", "score": 85, "tags": ["vip"], "raw_data": "..." }
+      - { "name": "bob", "status": "inactive", "score": 72, "tags": [], "raw_data": "..." }
+      - { "name": "  charlie", "status": "active", "score": 45, "tags": [], "raw_data": "..." }
+      - { "name": "diana", "status": "active", "score": 91, "tags": ["new"], "raw_data": "..." }
+      - { "name": "  eve  ", "status": "pending", "score": 38, "tags": [], "raw_data": "..." }
+
+# Python Processor: 数据清洗（过滤 + 转换 + 填充默认值）
+# Go 原生 Processor: 只保留需要跟进的记录（二次过滤）
+processors:
+  - name: processor-python-script
+    config:
+      script: ./examples/standard/scripts/processor_data_clean.py
+  - name: processor-condition-filter
+    config:
+      field: need_followup
+      op: eq
+      value: true
+
+# Go 原生 Sink: 控制台输出
+sink:
+  name: sink-output-console
+  config:
+    format: json

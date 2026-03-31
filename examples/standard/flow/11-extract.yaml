@@ -1,0 +1,52 @@
+# 示例11: 字段提取 - 从嵌套结构中提取数据
+# 演示 extract, extract_keep, extract_flatten 功能
+
+name: extract-flow
+buffer_size: 100
+
+source:
+  name: source-static-data
+  config:
+    data:
+      - trace_id: "trace-001"
+        timestamp: "2024-01-15T10:00:00Z"
+        event_type: "user_action"
+        payload:
+          user:
+            id: "U001"
+            name: "Alice"
+            action: "login"
+      - trace_id: "trace-002"
+        timestamp: "2024-01-15T10:01:00Z"
+        event_type: "order"
+        payload:
+          order_id: "O001"
+          items:
+            - sku: "A001"
+              name: "Product A"
+              qty: 2
+              price: 100
+            - sku: "B002"
+              name: "Product B"
+              qty: 1
+              price: 200
+      - trace_id: "trace-003"
+        timestamp: "2024-01-15T10:02:00Z"
+        event_type: "notification"
+        payload:
+          channel: "email"
+          recipients:
+            - "alice@example.com"
+            - "bob@example.com"
+
+processors:
+  # 提取 payload 字段，保留 trace_id 和 timestamp
+  - name: processor-transform-field
+    config:
+      extract: payload
+      extract_keep: [trace_id, timestamp, event_type]
+
+sink:
+  name: sink-output-console
+  config:
+    format: json
