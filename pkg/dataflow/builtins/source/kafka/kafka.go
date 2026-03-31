@@ -47,15 +47,18 @@ func newConsumerHandler() *consumerHandler {
 	}
 }
 
+// Setup 实现 sarama.ConsumerGroupHandler 接口，标记消费者就绪
 func (h *consumerHandler) Setup(sarama.ConsumerGroupSession) error {
 	close(h.ready)
 	return nil
 }
 
+// Cleanup 实现 sarama.ConsumerGroupHandler 接口，清理消费者资源
 func (h *consumerHandler) Cleanup(sarama.ConsumerGroupSession) error {
 	return nil
 }
 
+// ConsumeClaim 实现 sarama.ConsumerGroupHandler 接口，消费消息
 func (h *consumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
 		select {
@@ -161,12 +164,16 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 		select {
 		case <-ctx.Done():
 			// 优雅关闭
-			s.Close()
+			if closeErr := s.Close(); closeErr != nil {
+				log.Printf("[kafka] 关闭失败: %v", closeErr)
+			}
 			wg.Wait()
 			return count, ctx.Err()
 
 		case err := <-errCh:
-			s.Close()
+			if closeErr := s.Close(); closeErr != nil {
+				log.Printf("[kafka] 关闭失败: %v", closeErr)
+			}
 			wg.Wait()
 			return count, err
 
@@ -189,7 +196,9 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 			case out <- record:
 				count++
 			case <-ctx.Done():
-				s.Close()
+				if closeErr := s.Close(); closeErr != nil {
+					log.Printf("[kafka] 关闭失败: %v", closeErr)
+				}
 				wg.Wait()
 				return count, ctx.Err()
 			}

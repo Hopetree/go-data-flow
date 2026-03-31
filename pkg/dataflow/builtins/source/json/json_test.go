@@ -60,8 +60,11 @@ func TestSource_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := s.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = s.Init(configBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -84,10 +87,13 @@ func TestSource_ReadJSONLines(t *testing.T) {
 	}
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: jsonlPath,
 		Format:   "lines",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -117,7 +123,8 @@ func TestSource_ReadJSONLines(t *testing.T) {
 	}
 
 	// Check first record
-	if records[0]["id"].(float64) != 1 {
+	id, ok := records[0]["id"].(float64)
+	if !ok || id != 1 {
 		t.Errorf("First record id = %v, want 1", records[0]["id"])
 	}
 	if records[0]["name"] != "Alice" {
@@ -134,16 +141,22 @@ func TestSource_ReadJSONArray(t *testing.T) {
 		{"id": 1, "name": "Alice"},
 		{"id": 2, "name": "Bob"},
 	}
-	content, _ := json.Marshal(records)
+	content, err := json.Marshal(records)
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := os.WriteFile(jsonPath, content, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: jsonPath,
 		Format:   "array",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -176,11 +189,14 @@ func TestSource_ReadWithBatchSize(t *testing.T) {
 	}
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath:  jsonlPath,
 		Format:    "lines",
 		BatchSize: 3,
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -201,10 +217,13 @@ func TestSource_ReadWithBatchSize(t *testing.T) {
 
 func TestSource_FileNotFound(t *testing.T) {
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: "/nonexistent/path/file.json",
 		Format:   "lines",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -212,7 +231,7 @@ func TestSource_FileNotFound(t *testing.T) {
 	out := make(chan types.Record, 10)
 	ctx := context.Background()
 
-	_, err := s.Read(ctx, out)
+	_, err = s.Read(ctx, out)
 	if err == nil {
 		t.Error("Read() should return error for non-existent file")
 	}
@@ -232,10 +251,13 @@ func TestSource_GlobPattern(t *testing.T) {
 	}
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: filepath.Join(tmpDir, "*.jsonl"),
 		Format:   "lines",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -269,10 +291,13 @@ func TestSource_EmptyLines(t *testing.T) {
 	}
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: jsonlPath,
 		Format:   "lines",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -305,9 +330,12 @@ func TestSliceSource_Init(t *testing.T) {
 		{"id": 1, "name": "Alice"},
 		{"id": 2, "name": "Bob"},
 	}
-	configBytes, _ := json.Marshal(map[string]interface{}{
+	configBytes, err := json.Marshal(map[string]interface{}{
 		"records": records,
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	s := NewSliceSource()
 	if err := s.Init(configBytes); err != nil {
@@ -325,9 +353,12 @@ func TestSliceSource_Read(t *testing.T) {
 		{"id": 2, "name": "Bob"},
 		{"id": 3, "name": "Charlie"},
 	}
-	configBytes, _ := json.Marshal(map[string]interface{}{
+	configBytes, err := json.Marshal(map[string]interface{}{
 		"records": records,
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	s := NewSliceSource()
 	if err := s.Init(configBytes); err != nil {

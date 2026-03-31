@@ -45,8 +45,11 @@ func TestSink_Init_Validation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := s.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = s.Init(configBytes)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("期望返回错误，但得到 nil")
@@ -70,8 +73,11 @@ func TestSink_Init_Defaults(t *testing.T) {
 	}
 	// 连接会失败，但可以验证默认值已应用
 	s := New()
-	configBytes, _ := json.Marshal(cfg)
-	err := s.Init(configBytes)
+	configBytes, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
+	err = s.Init(configBytes)
 	if err == nil {
 		t.Fatal("期望连接失败")
 	}
@@ -104,8 +110,14 @@ func TestSink_Init_FieldMapping(t *testing.T) {
 		FieldMapping: map[string]string{"id": "user_id", "name": "user_name"},
 	}
 	s := New()
-	configBytes, _ := json.Marshal(cfg)
-	_ = s.Init(configBytes) // 连接会失败，但字段映射已初始化
+	configBytes, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
+	if err := s.Init(configBytes); err != nil {
+		// 连接会失败，但字段映射已初始化
+		t.Logf("Init 返回错误（预期行为）: %v", err)
+	}
 
 	if s.columnToSource == nil {
 		t.Fatal("columnToSource 未初始化")

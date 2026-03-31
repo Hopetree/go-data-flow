@@ -75,12 +75,14 @@ func TestCollectorRegister(t *testing.T) {
 
 func TestCollectorCounter(t *testing.T) {
 	collector := NewCollector("test")
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "requests_total",
 		Type:   MetricTypeCounter,
 		Help:   "Total requests",
 		Labels: []string{"method"},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 
 	// 测试 IncCounter
 	collector.IncCounter("requests_total", prometheus.Labels{"method": "GET"})
@@ -96,12 +98,14 @@ func TestCollectorCounter(t *testing.T) {
 
 func TestCollectorGauge(t *testing.T) {
 	collector := NewCollector("test")
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "connections",
 		Type:   MetricTypeGauge,
 		Help:   "Active connections",
 		Labels: []string{"service"},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 
 	collector.SetGauge("connections", 100, prometheus.Labels{"service": "api"})
 	collector.IncGauge("connections", prometheus.Labels{"service": "api"})
@@ -114,12 +118,14 @@ func TestCollectorGauge(t *testing.T) {
 
 func TestCollectorHistogram(t *testing.T) {
 	collector := NewCollector("test")
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "duration",
 		Type:   MetricTypeHistogram,
 		Help:   "Request duration",
 		Labels: []string{"path"},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 
 	for i := 0; i < 100; i++ {
 		collector.ObserveHistogram("duration", float64(i)/10, prometheus.Labels{"path": "/api"})
@@ -132,12 +138,14 @@ func TestCollectorHistogram(t *testing.T) {
 
 func TestCollectorSummary(t *testing.T) {
 	collector := NewCollector("test")
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "size",
 		Type:   MetricTypeSummary,
 		Help:   "Response size",
 		Labels: []string{"type"},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 
 	for i := 0; i < 100; i++ {
 		collector.ObserveSummary("size", float64(i)*100, prometheus.Labels{"type": "json"})
@@ -150,12 +158,14 @@ func TestCollectorSummary(t *testing.T) {
 
 func TestCollectorHandler(t *testing.T) {
 	collector := NewCollector("test")
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "test_metric",
 		Type:   MetricTypeCounter,
 		Help:   "Test metric",
 		Labels: []string{"label"},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 
 	collector.IncCounter("test_metric", prometheus.Labels{"label": "value"})
 
@@ -179,15 +189,15 @@ func TestCollectorHandler(t *testing.T) {
 }
 
 func TestMetricsServer(t *testing.T) {
-	config := MetricsServerConfig{
+	config := ServerConfig{
 		Addr:      ":0", // 使用随机端口
 		Path:      "/metrics",
 		Namespace: "test",
 	}
 
-	server := NewMetricsServer(config)
+	server := NewServer(config)
 	if server == nil {
-		t.Fatal("期望创建 MetricsServer")
+		t.Fatal("期望创建 Server")
 	}
 
 	// 验证配置
@@ -203,7 +213,7 @@ func TestMetricsServer(t *testing.T) {
 }
 
 func TestMetricsServerCollector(t *testing.T) {
-	server := NewMetricsServer(MetricsServerConfig{
+	server := NewServer(ServerConfig{
 		Namespace: "test",
 	})
 
@@ -213,12 +223,14 @@ func TestMetricsServerCollector(t *testing.T) {
 	}
 
 	// 注册并使用指标
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "test_counter",
 		Type:   MetricTypeCounter,
 		Help:   "Test counter",
 		Labels: []string{},
-	})
+	}); err != nil {
+		t.Fatalf("注册指标失败: %v", err)
+	}
 	collector.IncCounter("test_counter", nil)
 }
 

@@ -49,8 +49,11 @@ func TestSink_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := s.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = s.Init(configBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -91,11 +94,17 @@ func TestSink_Consume(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Redirect stdout
 			old := os.Stdout
-			r, w, _ := os.Pipe()
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("os.Pipe() 失败: %v", err)
+			}
 			os.Stdout = w
 
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := s.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -114,7 +123,9 @@ func TestSink_Consume(t *testing.T) {
 			// Restore stdout and read output
 			w.Close()
 			os.Stdout = old
-			io.Copy(io.Discard, r)
+			if _, err := io.Copy(io.Discard, r); err != nil {
+				t.Logf("io.Copy 失败: %v", err)
+			}
 
 			if s.Count() != tt.expectLast {
 				t.Errorf("Count() = %d, want %d", s.Count(), tt.expectLast)
@@ -126,11 +137,17 @@ func TestSink_Consume(t *testing.T) {
 func TestSink_JSONOutput(t *testing.T) {
 	// Capture stdout
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe() 失败: %v", err)
+	}
 	os.Stdout = w
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{Format: "json"})
+	configBytes, err := json.Marshal(Config{Format: "json"})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -149,7 +166,9 @@ func TestSink_JSONOutput(t *testing.T) {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	if _, err := io.Copy(&buf, r); err != nil {
+		t.Fatalf("io.Copy 失败: %v", err)
+	}
 
 	// Verify output is valid JSON
 	var result map[string]interface{}
@@ -168,10 +187,16 @@ func TestSink_Count(t *testing.T) {
 
 	// Redirect stdout
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe() 失败: %v", err)
+	}
 	os.Stdout = w
 
-	configBytes, _ := json.Marshal(Config{Format: "json"})
+	configBytes, err := json.Marshal(Config{Format: "json"})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -190,7 +215,9 @@ func TestSink_Count(t *testing.T) {
 	// Restore stdout
 	w.Close()
 	os.Stdout = old
-	io.Copy(io.Discard, r)
+	if _, err := io.Copy(io.Discard, r); err != nil {
+		t.Logf("io.Copy 失败: %v", err)
+	}
 
 	if s.Count() != 3 {
 		t.Errorf("Count() = %d, want 3", s.Count())

@@ -17,7 +17,7 @@ import (
 	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
-// 组件注册名称
+// TypeName 组件注册名称
 const TypeName = "sink-clickhouse"
 
 // 默认配置值

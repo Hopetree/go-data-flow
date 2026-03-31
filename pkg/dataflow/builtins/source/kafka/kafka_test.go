@@ -78,8 +78,11 @@ func TestSource_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := s.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = s.Init(configBytes)
 
 			if tt.wantErr {
 				if err == nil {
@@ -144,7 +147,7 @@ func TestConfig_DefaultOffset(t *testing.T) {
 	}
 
 	if config.Offset != "" {
-		// Default is set in Init, not in struct
+		t.Errorf("期望 Offset 默认为空字符串, 实际 '%s'", config.Offset)
 	}
 
 	// Simulate Init logic

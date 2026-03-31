@@ -191,8 +191,11 @@ func TestProcessor_Process_Regex(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := p.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = p.Init(configBytes)
 
 			if tt.expectError {
 				if err == nil {

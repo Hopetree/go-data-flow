@@ -108,8 +108,11 @@ func TestProcessor_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := p.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = p.Init(configBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -183,7 +186,10 @@ func TestProcessor_Process_Eq(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -268,7 +274,10 @@ func TestProcessor_Process_Ne(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -339,7 +348,10 @@ func TestProcessor_Process_Exists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -372,11 +384,14 @@ func TestProcessor_Process_Exists(t *testing.T) {
 
 func TestProcessor_Process_ContextCancellation(t *testing.T) {
 	p := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		Field: "status",
 		Op:    "eq",
 		Value: "active",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := p.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -401,7 +416,7 @@ func TestProcessor_Process_ContextCancellation(t *testing.T) {
 	close(in)
 
 	// 等待完成
-	err := <-done
+	err = <-done
 	if err != nil && err != context.Canceled {
 		t.Errorf("Process() error = %v, want nil or context.Canceled", err)
 	}

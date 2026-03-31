@@ -46,8 +46,8 @@ type Options struct {
 type App struct {
 	options       Options
 	registry      *dataflow.Registry[Record]
-	appConfig     *AppConfig
-	metricsServer *metrics.MetricsServer
+	appConfig     *Config
+	metricsServer *metrics.Server
 }
 
 // NewApp 创建应用实例
@@ -81,7 +81,7 @@ func NewApp(opts Options) *App {
 
 // initDefaultLogger 初始化默认日志配置
 func initDefaultLogger() {
-	_ = logger.Init(logger.Config{
+	if err := logger.Init(logger.Config{
 		Level:      "info",
 		Format:     "text",
 		Output:     "stdout",
@@ -90,11 +90,14 @@ func initDefaultLogger() {
 		MaxBackups: 5,
 		MaxAge:     30,
 		Compress:   false,
-	})
+	}); err != nil {
+		// 默认日志初始化失败时使用 zap 的默认日志器，不应中断程序
+		_ = err
+	}
 }
 
 // initLogger 初始化日志模块
-func initLogger(cfg *AppConfig) error {
+func initLogger(cfg *Config) error {
 	return logger.Init(logger.Config{
 		Level:      cfg.Log.Level,
 		Format:     cfg.Log.Format,
@@ -282,7 +285,7 @@ func (a *App) startMetricsServer() error {
 	}
 
 	// 创建并启动服务器
-	a.metricsServer = metrics.NewMetricsServer(metrics.MetricsServerConfig{
+	a.metricsServer = metrics.NewServer(metrics.ServerConfig{
 		Addr:      addr,
 		Path:      path,
 		Namespace: namespace,
@@ -364,7 +367,7 @@ func LoadConfig(path string) (*dataflow.FlowConfig, error) {
 	case ".json":
 		err = json.Unmarshal(data, &config)
 	default:
-		if err := yaml.Unmarshal(data, &config); err != nil {
+		if yamlErr := yaml.Unmarshal(data, &config); yamlErr != nil {
 			err = json.Unmarshal(data, &config)
 		}
 	}
@@ -377,13 +380,13 @@ func LoadConfig(path string) (*dataflow.FlowConfig, error) {
 }
 
 // LoadAppConfig 加载应用配置文件
-func LoadAppConfig(path string) (*AppConfig, error) {
+func LoadAppConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var config AppConfig
+	var config Config
 
 	switch filepath.Ext(path) {
 	case ".yaml", ".yml":
@@ -391,7 +394,7 @@ func LoadAppConfig(path string) (*AppConfig, error) {
 	case ".json":
 		err = json.Unmarshal(data, &config)
 	default:
-		if err := yaml.Unmarshal(data, &config); err != nil {
+		if yamlErr := yaml.Unmarshal(data, &config); yamlErr != nil {
 			err = json.Unmarshal(data, &config)
 		}
 	}

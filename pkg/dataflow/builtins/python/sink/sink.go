@@ -76,7 +76,9 @@ func (s *Sink) Consume(ctx context.Context, in <-chan types.Record) error {
 
 		if err := s.runner.WriteLine(ctx, data); err != nil {
 			// stdin 写入失败通常意味着 Python 进程已退出
-			s.runner.Close()
+			if closeErr := s.runner.Close(); closeErr != nil {
+				logger.Warn("[python-sink] 关闭 Python 进程失败: %v", closeErr)
+			}
 			return fmt.Errorf("写入 Python stdin 失败: %w", err)
 		}
 	}

@@ -165,7 +165,10 @@ func Global() *Logger {
 	mu.RUnlock()
 	if l == nil {
 		// 如果未初始化，返回默认配置的日志器
-		Init(Config{})
+		if err := Init(Config{}); err != nil {
+			// 初始化失败，返回 nil（调用方需处理）
+			return nil
+		}
 		mu.RLock()
 		l = defaultLogger
 		mu.RUnlock()

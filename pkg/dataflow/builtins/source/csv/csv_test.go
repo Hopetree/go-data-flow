@@ -146,22 +146,22 @@ func TestSource_ReadWithTypeConversion(t *testing.T) {
 		t.Errorf("Read() count = %d, want 2", count)
 	}
 
-	// 验证类型转换
-	close(out)
-	for r := range out {
-		// id 应该是 int 类型
-		if _, ok := r["id"].(int); !ok {
-			t.Errorf("id type = %T, want int", r["id"])
-		}
-		// price 应该是 float64 类型
-		if _, ok := r["price"].(float64); !ok {
-			t.Errorf("price type = %T, want float64", r["price"])
-		}
-		// active 应该是 bool 类型
-		if _, ok := r["active"].(bool); !ok {
-			t.Errorf("active type = %T, want bool", r["active"])
-		}
-		break // 只检查第一条
+	// 验证类型转换（只检查第一条记录）
+	r, ok := <-out
+	if !ok {
+		t.Fatal("通道中无记录")
+	}
+	// id 应该是 int 类型
+	if _, ok := r["id"].(int); !ok {
+		t.Errorf("id type = %T, want int", r["id"])
+	}
+	// price 应该是 float64 类型
+	if _, ok := r["price"].(float64); !ok {
+		t.Errorf("price type = %T, want float64", r["price"])
+	}
+	// active 应该是 bool 类型
+	if _, ok := r["active"].(bool); !ok {
+		t.Errorf("active type = %T, want bool", r["active"])
 	}
 }
 

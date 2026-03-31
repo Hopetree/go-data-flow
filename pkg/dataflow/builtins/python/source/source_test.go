@@ -13,7 +13,10 @@ func TestInit_ValidConfig(t *testing.T) {
 	s := New()
 
 	scriptPath := "../testdata/echo_source.py"
-	config, _ := json.Marshal(map[string]string{"script": scriptPath})
+	config, err := json.Marshal(map[string]string{"script": scriptPath})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
@@ -23,7 +26,10 @@ func TestInit_ValidConfig(t *testing.T) {
 func TestInit_EmptyScript(t *testing.T) {
 	s := New()
 
-	config, _ := json.Marshal(map[string]string{"script": ""})
+	config, err := json.Marshal(map[string]string{"script": ""})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err == nil {
 		t.Fatal("Init() 应该在脚本路径为空时返回错误")
@@ -34,7 +40,10 @@ func TestRead_Data(t *testing.T) {
 	s := New()
 
 	scriptPath := "../testdata/echo_source.py"
-	config, _ := json.Marshal(map[string]string{"script": scriptPath})
+	config, err := json.Marshal(map[string]string{"script": scriptPath})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
@@ -75,7 +84,10 @@ func TestRead_ContextCancel(t *testing.T) {
 	s := New()
 
 	scriptPath := "../testdata/echo_source.py"
-	config, _ := json.Marshal(map[string]string{"script": scriptPath})
+	config, err := json.Marshal(map[string]string{"script": scriptPath})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
@@ -86,7 +98,7 @@ func TestRead_ContextCancel(t *testing.T) {
 	cancel()
 
 	out := make(chan types.Record, 10)
-	_, err := s.Read(ctx, out)
+	_, err = s.Read(ctx, out)
 	if err == nil {
 		t.Fatal("Read() 应该在 context 取消时返回错误")
 	}

@@ -61,8 +61,11 @@ func TestSink_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New()
-			configBytes, _ := json.Marshal(tt.config)
-			err := s.Init(configBytes)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = s.Init(configBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -75,7 +78,10 @@ func TestSink_Consume(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "output.csv")
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{FilePath: outputPath})
+	configBytes, err := json.Marshal(Config{FilePath: outputPath})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -136,10 +142,13 @@ func TestSink_WithHeaders(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "headers.csv")
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: outputPath,
 		Headers:  []string{"id", "name"},
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -190,10 +199,13 @@ func TestSink_CustomSeparator(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "tab.tsv")
 
 	s := New()
-	configBytes, _ := json.Marshal(Config{
+	configBytes, err := json.Marshal(Config{
 		FilePath: outputPath,
 		Separator: "\t",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}
@@ -237,7 +249,10 @@ func TestSink_Count(t *testing.T) {
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "count.csv")
 
-	configBytes, _ := json.Marshal(Config{FilePath: outputPath})
+	configBytes, err := json.Marshal(Config{FilePath: outputPath})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := s.Init(configBytes); err != nil {
 		t.Fatalf("Init() error = %v", err)
 	}

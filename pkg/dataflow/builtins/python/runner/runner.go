@@ -309,7 +309,9 @@ func (r *Runner) Close() error {
 				}
 			case <-time.After(processExitTimeout):
 				// 超时，杀死整个进程组
-				syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL)
+				if killErr := syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL); killErr != nil {
+					logger.Warn("强制杀死 Python 进程失败: %v", killErr)
+				}
 				closeErr = fmt.Errorf("Python 进程超时未退出，已强制杀死")
 			}
 		}

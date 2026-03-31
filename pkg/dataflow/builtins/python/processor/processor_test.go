@@ -12,9 +12,12 @@ import (
 func TestInit_ValidConfig(t *testing.T) {
 	p := New()
 
-	config, _ := json.Marshal(map[string]string{
+	config, err := json.Marshal(map[string]string{
 		"script": "../testdata/echo_processor.py",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := p.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
@@ -24,9 +27,12 @@ func TestInit_ValidConfig(t *testing.T) {
 func TestProcess_Data(t *testing.T) {
 	p := New()
 
-	config, _ := json.Marshal(map[string]string{
+	config, err := json.Marshal(map[string]string{
 		"script": "../testdata/echo_processor.py",
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := p.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
@@ -53,7 +59,7 @@ func TestProcess_Data(t *testing.T) {
 
 	// 先等待 Process 完成
 	var results []types.Record
-	err := <-done
+	err = <-done
 	if err != nil {
 		t.Fatalf("Process() 失败: %v", err)
 	}

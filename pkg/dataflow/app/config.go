@@ -1,8 +1,8 @@
 // Package app 提供应用程序框架
 package app
 
-// AppConfig 应用级全局配置
-type AppConfig struct {
+// Config 应用级全局配置
+type Config struct {
 	// Name 应用名称
 	Name string `json:"name" yaml:"name"`
 	// Log 日志配置

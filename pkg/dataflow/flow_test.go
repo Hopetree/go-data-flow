@@ -128,8 +128,9 @@ func (p *MockProcessor[T]) Process(ctx context.Context, in <-chan T, out chan<- 
 		p.count++
 		p.mu.Unlock()
 
-		processed, pass := item, true
+		processed := item
 		if p.processFunc != nil {
+			var pass bool
 			processed, pass = p.processFunc(item)
 			if !pass {
 				p.mu.Lock()
@@ -501,7 +502,9 @@ func TestFlowRun(t *testing.T) {
 		ctx := context.Background()
 		done := make(chan struct{})
 		go func() {
-			flow.Run(ctx)
+			if err := flow.Run(ctx); err != nil {
+				t.Logf("flow.Run 失败: %v", err)
+			}
 			close(done)
 		}()
 
@@ -779,8 +782,12 @@ func BenchmarkFlowRun(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		flow := NewFlow[int](config, registry)
-		flow.Build()
-		flow.Run(context.Background())
+		if err := flow.Build(); err != nil {
+			b.Fatalf("build failed: %v", err)
+		}
+		if err := flow.Run(context.Background()); err != nil {
+			b.Fatalf("run failed: %v", err)
+		}
 		// Reset sink data
 		sink.mu.Lock()
 		sink.data = make([]int, 0)

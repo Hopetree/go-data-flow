@@ -66,7 +66,11 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 	if err := s.runner.Start(ctx); err != nil {
 		return 0, fmt.Errorf("启动 Python 进程失败: %w", err)
 	}
-	defer s.runner.Close()
+	defer func() {
+		if closeErr := s.runner.Close(); closeErr != nil {
+			logger.Warn("[python-source] 关闭 Python 进程失败: %v", closeErr)
+		}
+	}()
 
 	var count int64
 	for {

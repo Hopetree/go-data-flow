@@ -8,8 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// MetricsRecorder 记录处理过程中的指标
-type MetricsRecorder interface {
+// Recorder 记录处理过程中的指标
+type Recorder interface {
 	// RecordIn 记录进入组件的记录数
 	RecordIn(count int64)
 	// RecordOut 记录离开组件的记录数
@@ -31,22 +31,6 @@ type MetricsRecorder interface {
 	ObserveSummary(name string, value float64, labels prometheus.Labels)
 }
 
-// noopMetricsRecorder 空实现的指标记录器
-type noopMetricsRecorder struct{}
-
-func (n *noopMetricsRecorder) RecordIn(count int64)                     {}
-func (n *noopMetricsRecorder) RecordOut(count int64)                    {}
-func (n *noopMetricsRecorder) RecordError(count int64)                  {}
-func (n *noopMetricsRecorder) RecordDuration(seconds float64)           {}
-func (n *noopMetricsRecorder) AddCounter(name string, value float64, labels prometheus.Labels) {
-}
-func (n *noopMetricsRecorder) SetGauge(name string, value float64, labels prometheus.Labels) {
-}
-func (n *noopMetricsRecorder) ObserveHistogram(name string, value float64, labels prometheus.Labels) {
-}
-func (n *noopMetricsRecorder) ObserveSummary(name string, value float64, labels prometheus.Labels) {
-}
-
 // PrometheusCollector Prometheus 指标收集器接口
 type PrometheusCollector interface {
 	// AddCounter 增加计数器值
@@ -55,8 +39,8 @@ type PrometheusCollector interface {
 	ObserveHistogram(name string, value float64, labels prometheus.Labels)
 }
 
-// componentMetrics 组件级别的指标
-type componentMetrics struct {
+// ComponentMetrics 组件级别的指标
+type ComponentMetrics struct {
 	flowName      string
 	componentName string
 	promCollector PrometheusCollector
@@ -67,7 +51,11 @@ type componentMetrics struct {
 	processingSec atomic.Int64 // 存储纳秒，避免浮点精度问题
 }
 
-func (m *componentMetrics) RecordIn(count int64) {
+// 确保 ComponentMetrics 实现 Recorder 接口
+var _ Recorder = (*ComponentMetrics)(nil)
+
+// RecordIn 记录输入记录数
+func (m *ComponentMetrics) RecordIn(count int64) {
 	m.recordsIn.Add(count)
 
 	if m.promCollector != nil {
@@ -78,7 +66,8 @@ func (m *componentMetrics) RecordIn(count int64) {
 	}
 }
 
-func (m *componentMetrics) RecordOut(count int64) {
+// RecordOut 记录输出记录数
+func (m *ComponentMetrics) RecordOut(count int64) {
 	m.recordsOut.Add(count)
 
 	if m.promCollector != nil {
@@ -89,7 +78,8 @@ func (m *componentMetrics) RecordOut(count int64) {
 	}
 }
 
-func (m *componentMetrics) RecordError(count int64) {
+// RecordError 记录错误数
+func (m *ComponentMetrics) RecordError(count int64) {
 	m.recordsError.Add(count)
 
 	if m.promCollector != nil {
@@ -100,7 +90,8 @@ func (m *componentMetrics) RecordError(count int64) {
 	}
 }
 
-func (m *componentMetrics) RecordDuration(seconds float64) {
+// RecordDuration 记录处理耗时
+func (m *ComponentMetrics) RecordDuration(seconds float64) {
 	m.processingSec.Add(int64(seconds * 1e9))
 
 	if m.promCollector != nil {
@@ -112,7 +103,7 @@ func (m *componentMetrics) RecordDuration(seconds float64) {
 }
 
 // AddCounter 增加自定义计数器指标
-func (m *componentMetrics) AddCounter(name string, value float64, labels prometheus.Labels) {
+func (m *ComponentMetrics) AddCounter(name string, value float64, labels prometheus.Labels) {
 	if m.promCollector == nil {
 		return
 	}
@@ -127,7 +118,7 @@ func (m *componentMetrics) AddCounter(name string, value float64, labels prometh
 }
 
 // SetGauge 设置自定义 Gauge 指标
-func (m *componentMetrics) SetGauge(name string, value float64, labels prometheus.Labels) {
+func (m *ComponentMetrics) SetGauge(name string, value float64, labels prometheus.Labels) {
 	if m.promCollector == nil {
 		return
 	}
@@ -142,7 +133,7 @@ func (m *componentMetrics) SetGauge(name string, value float64, labels prometheu
 }
 
 // ObserveHistogram 观察自定义 Histogram 指标
-func (m *componentMetrics) ObserveHistogram(name string, value float64, labels prometheus.Labels) {
+func (m *ComponentMetrics) ObserveHistogram(name string, value float64, labels prometheus.Labels) {
 	if m.promCollector == nil {
 		return
 	}
@@ -157,7 +148,7 @@ func (m *componentMetrics) ObserveHistogram(name string, value float64, labels p
 }
 
 // ObserveSummary 观察自定义 Summary 指标
-func (m *componentMetrics) ObserveSummary(name string, value float64, labels prometheus.Labels) {
+func (m *ComponentMetrics) ObserveSummary(name string, value float64, labels prometheus.Labels) {
 	if m.promCollector == nil {
 		return
 	}
@@ -171,7 +162,8 @@ func (m *componentMetrics) ObserveSummary(name string, value float64, labels pro
 	m.promCollector.ObserveHistogram(name, value, mergedLabels)
 }
 
-func (m *componentMetrics) Snapshot() (in, out, errs int64, avgSec float64) {
+// Snapshot 返回指标快照
+func (m *ComponentMetrics) Snapshot() (in, out, errs int64, avgSec float64) {
 	in = m.recordsIn.Load()
 	out = m.recordsOut.Load()
 	errs = m.recordsError.Load()
@@ -185,7 +177,7 @@ func (m *componentMetrics) Snapshot() (in, out, errs int64, avgSec float64) {
 // FlowMetrics 流程级别的指标聚合
 type FlowMetrics struct {
 	mu            sync.RWMutex
-	components    map[string]*componentMetrics
+	components    map[string]*ComponentMetrics
 	flowName      string
 	promCollector PrometheusCollector
 }
@@ -193,7 +185,7 @@ type FlowMetrics struct {
 // NewFlowMetrics 创建流程级别的指标聚合器
 func NewFlowMetrics(flowName string) *FlowMetrics {
 	return &FlowMetrics{
-		components: make(map[string]*componentMetrics),
+		components: make(map[string]*ComponentMetrics),
 		flowName:   flowName,
 	}
 }
@@ -206,7 +198,7 @@ func (fm *FlowMetrics) SetPrometheusCollector(collector PrometheusCollector) {
 }
 
 // GetOrCreate 获取或创建组件指标
-func (fm *FlowMetrics) GetOrCreate(name string) *componentMetrics {
+func (fm *FlowMetrics) GetOrCreate(name string) *ComponentMetrics {
 	fm.mu.RLock()
 	if m, ok := fm.components[name]; ok {
 		fm.mu.RUnlock()
@@ -219,7 +211,7 @@ func (fm *FlowMetrics) GetOrCreate(name string) *componentMetrics {
 	if m, ok := fm.components[name]; ok {
 		return m
 	}
-	m := &componentMetrics{
+	m := &ComponentMetrics{
 		flowName:      fm.flowName,
 		componentName: name,
 		promCollector: fm.promCollector,
@@ -257,8 +249,8 @@ type MetricSnapshot struct {
 	ProcessingTime time.Duration
 }
 
-// MetricsSummary 指标汇总
-type MetricsSummary struct {
+// Summary 指标汇总
+type Summary struct {
 	StartTime  time.Time
 	EndTime    time.Time
 	Duration   time.Duration

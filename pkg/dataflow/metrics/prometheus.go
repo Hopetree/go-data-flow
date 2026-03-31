@@ -15,9 +15,13 @@ import (
 type MetricType int
 
 const (
+// MetricTypeCounter 计数器指标类型
 	MetricTypeCounter MetricType = iota
+	// MetricTypeGauge Gauge 指标类型
 	MetricTypeGauge
+	// MetricTypeHistogram Histogram 指标类型
 	MetricTypeHistogram
+	// MetricTypeSummary Summary 指标类型
 	MetricTypeSummary
 )
 
@@ -194,16 +198,16 @@ func (c *Collector) Handler() http.Handler {
 	return promhttp.HandlerFor(c.registry, promhttp.HandlerOpts{})
 }
 
-// MetricsServer Prometheus 指标服务器
-type MetricsServer struct {
+// Server Prometheus 指标服务器
+type Server struct {
 	addr     string
 	path     string
 	server   *http.Server
 	collector *Collector
 }
 
-// MetricsServerConfig 服务器配置
-type MetricsServerConfig struct {
+// ServerConfig 服务器配置
+type ServerConfig struct {
 	// Addr 监听地址，默认 :9090
 	Addr string `json:"addr"`
 	// Path metrics 路径，默认 /metrics
@@ -212,8 +216,8 @@ type MetricsServerConfig struct {
 	Namespace string `json:"namespace"`
 }
 
-// NewMetricsServer 创建新的 metrics 服务器
-func NewMetricsServer(config MetricsServerConfig) *MetricsServer {
+// NewServer 创建新的 metrics 服务器
+func NewServer(config ServerConfig) *Server {
 	if config.Addr == "" {
 		config.Addr = ":9090"
 	}
@@ -231,35 +235,43 @@ func NewMetricsServer(config MetricsServerConfig) *MetricsServer {
 	collector.registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 
 	// 注册默认的 dataflow 指标
-	collector.Register(MetricDesc{
+	if err := collector.Register(MetricDesc{
 		Name:   "records_in_total",
 		Type:   MetricTypeCounter,
 		Help:   "Total number of records read from source",
 		Labels: []string{"flow", "component"},
-	})
-	collector.Register(MetricDesc{
+	}); err != nil {
+		return nil
+	}
+	if err := collector.Register(MetricDesc{
 		Name:   "records_out_total",
 		Type:   MetricTypeCounter,
 		Help:   "Total number of records written to sink",
 		Labels: []string{"flow", "component"},
-	})
-	collector.Register(MetricDesc{
+	}); err != nil {
+		return nil
+	}
+	if err := collector.Register(MetricDesc{
 		Name:   "records_error_total",
 		Type:   MetricTypeCounter,
 		Help:   "Total number of errors encountered",
 		Labels: []string{"flow", "component"},
-	})
-	collector.Register(MetricDesc{
+	}); err != nil {
+		return nil
+	}
+	if err := collector.Register(MetricDesc{
 		Name:   "duration_seconds",
 		Type:   MetricTypeHistogram,
 		Help:   "Duration of flow execution in seconds",
 		Labels: []string{"flow", "component"},
-	})
+	}); err != nil {
+		return nil
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(config.Path, collector.Handler())
 
-	return &MetricsServer{
+	return &Server{
 		addr:      config.Addr,
 		path:      config.Path,
 		server:    &http.Server{Addr: config.Addr, Handler: mux},
@@ -268,18 +280,18 @@ func NewMetricsServer(config MetricsServerConfig) *MetricsServer {
 }
 
 // Collector 返回指标收集器
-func (s *MetricsServer) Collector() *Collector {
+func (s *Server) Collector() *Collector {
 	return s.collector
 }
 
 // Start 启动服务器
-func (s *MetricsServer) Start() error {
+func (s *Server) Start() error {
 	fmt.Printf("Prometheus metrics 服务器启动: http://%s%s\n", s.addr, s.path)
 	return s.server.ListenAndServe()
 }
 
 // Stop 停止服务器
-func (s *MetricsServer) Stop() error {
+func (s *Server) Stop() error {
 	return s.server.Close()
 }
 

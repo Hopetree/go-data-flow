@@ -72,7 +72,7 @@ func (f *Flow[T]) Build() error {
 	}
 	f.source = src
 
-	// 注入 Source 的 MetricsRecorder
+	// 注入 Source 的 Recorder
 	f.injectMetricsRecorder(src, "source", "source")
 
 	// 构建 Processors
@@ -86,7 +86,7 @@ func (f *Flow[T]) Build() error {
 		}
 		f.processors = append(f.processors, proc)
 
-		// 注入 Processor 的 MetricsRecorder
+		// 注入 Processor 的 Recorder
 		componentName := fmt.Sprintf("processor[%d]", i)
 		f.injectMetricsRecorder(proc, componentName, "processor")
 
@@ -123,7 +123,7 @@ func (f *Flow[T]) Build() error {
 	}
 	f.sink = sink
 
-	// 注入 Sink 的 MetricsRecorder
+	// 注入 Sink 的 Recorder
 	f.injectMetricsRecorder(sink, "sink", "sink")
 
 	return nil
@@ -354,10 +354,10 @@ func (f *Flow[T]) IsRunning() bool {
 //   - 无 processor 时：source 的 RecordOut
 // TotalError = StatsCounter 中所有组件错误之和
 // Components 为各组件独立明细。
-func (f *Flow[T]) Metrics() metrics.MetricsSummary {
+func (f *Flow[T]) Metrics() metrics.Summary {
 	stats := f.stats.Get()
 
-	summary := metrics.MetricsSummary{
+	summary := metrics.Summary{
 		StartTime:  f.startTime,
 		EndTime:    f.endTime,
 		Duration:   f.endTime.Sub(f.startTime),
@@ -428,7 +428,7 @@ func initComponent(component interface{}, config map[string]interface{}) error {
 	}
 }
 
-// injectMetricsRecorder 为组件注入 MetricsRecorder（如果组件实现了 MetricsRecorderAware 接口)
+// injectMetricsRecorder 为组件注入 Recorder（如果组件实现了 MetricsRecorderAware 接口)
 func (f *Flow[T]) injectMetricsRecorder(component interface{}, componentName string, componentType string) {
 	if aware, ok := component.(MetricsRecorderAware); ok {
 		recorder := f.flowMetrics.GetOrCreate(componentName)

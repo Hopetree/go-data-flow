@@ -61,7 +61,11 @@ func TestStartAndReadLine(t *testing.T) {
 	if err := r.Start(ctx); err != nil {
 		t.Fatalf("Start() 失败: %v", err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			t.Logf("Close() 失败: %v", err)
+		}
+	}()
 
 	// 读取 3 条记录
 	expectedIDs := []string{"1", "2", "3"}
@@ -99,7 +103,9 @@ func TestClose_Idempotent(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	r.Start(ctx)
+	if err := r.Start(ctx); err != nil {
+		t.Fatalf("Start() 失败: %v", err)
+	}
 
 	// 多次 Close 不应 panic
 	if err := r.Close(); err != nil {
@@ -162,19 +168,30 @@ func TestStderrCapture(t *testing.T) {
 
 	// 写入一些数据
 	record := map[string]interface{}{"test": true}
-	data, _ := json.Marshal(record)
-	r.WriteLine(ctx, data)
-	r.CloseStdin()
+	data, err := json.Marshal(record)
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
+	if err := r.WriteLine(ctx, data); err != nil {
+		t.Fatalf("WriteLine() 失败: %v", err)
+	}
+	if err := r.CloseStdin(); err != nil {
+		t.Fatalf("CloseStdin() 失败: %v", err)
+	}
 
 	// 等待退出
-	r.Close()
+	if err := r.Close(); err != nil {
+		t.Fatalf("Close() 失败: %v", err)
+	}
 
 	// 检查 stderr 输出
 	if len(stderrLines) == 0 {
 		t.Error("未捕获到 stderr 输出")
 	}
 	// 清理
-	os.Remove("/tmp/test_stderr_capture.jsonl")
+	if err := os.Remove("/tmp/test_stderr_capture.jsonl"); err != nil {
+		t.Logf("清理临时文件失败: %v", err)
+	}
 }
 
 func TestWriteLineAndReadLine(t *testing.T) {
@@ -190,17 +207,26 @@ func TestWriteLineAndReadLine(t *testing.T) {
 	if err := r.Start(ctx); err != nil {
 		t.Fatalf("Start() 失败: %v", err)
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			t.Logf("Close() 失败: %v", err)
+		}
+	}()
 
 	// 写入一条数据
 	input := map[string]interface{}{"name": "alice"}
-	data, _ := json.Marshal(input)
+	data, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 	if err := r.WriteLine(ctx, data); err != nil {
 		t.Fatalf("WriteLine() 失败: %v", err)
 	}
 
 	// 关闭 stdin 通知 Python 输入结束
-	r.CloseStdin()
+	if err := r.CloseStdin(); err != nil {
+		t.Fatalf("CloseStdin() 失败: %v", err)
+	}
 
 	// 读取输出
 	line, err := r.ReadLine(ctx)

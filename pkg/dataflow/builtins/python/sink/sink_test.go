@@ -17,30 +17,44 @@ func TestInit_ValidConfig(t *testing.T) {
 
 	scriptPath := "../testdata/file_sink.py"
 	outputFile := filepath.Join(os.TempDir(), "python_sink_test.jsonl")
-	config, _ := json.Marshal(map[string]interface{}{
+	config, err := json.Marshal(map[string]interface{}{
 		"script": scriptPath,
 		"env":    map[string]string{"SINK_OUTPUT_FILE": outputFile},
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
 	}
-	defer os.Remove(outputFile)
+	defer func() {
+		if err := os.Remove(outputFile); err != nil {
+			t.Logf("清理临时文件失败: %v", err)
+		}
+	}()
 }
 
 func TestConsume_Data(t *testing.T) {
 	s := New()
 
 	outputFile := filepath.Join(os.TempDir(), "python_sink_consume_test.jsonl")
-	config, _ := json.Marshal(map[string]interface{}{
+	config, err := json.Marshal(map[string]interface{}{
 		"script": "../testdata/file_sink.py",
 		"env":    map[string]string{"SINK_OUTPUT_FILE": outputFile},
 	})
+	if err != nil {
+		t.Fatalf("json.Marshal 失败: %v", err)
+	}
 
 	if err := s.Init(config); err != nil {
 		t.Fatalf("Init() 失败: %v", err)
 	}
-	defer os.Remove(outputFile)
+	defer func() {
+		if err := os.Remove(outputFile); err != nil {
+			t.Logf("清理临时文件失败: %v", err)
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

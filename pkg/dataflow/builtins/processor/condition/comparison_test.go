@@ -107,7 +107,10 @@ func TestProcessor_Process_Gt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -178,7 +181,10 @@ func TestProcessor_Process_Gte(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -264,7 +270,10 @@ func TestProcessor_Process_Lt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -335,7 +344,10 @@ func TestProcessor_Process_Lte(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
-			configBytes, _ := json.Marshal(tt.config)
+			configBytes, err := json.Marshal(tt.config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}

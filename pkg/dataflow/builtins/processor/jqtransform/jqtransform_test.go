@@ -62,8 +62,11 @@ func TestProcessor_Init(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			config := Config{Query: tt.query}
-			configBytes, _ := json.Marshal(config)
-			err := p.Init(configBytes)
+			configBytes, err := json.Marshal(config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
+			err = p.Init(configBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -270,7 +273,10 @@ func TestProcessor_Process(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := New()
 			config := Config{Query: tt.query}
-			configBytes, _ := json.Marshal(config)
+			configBytes, err := json.Marshal(config)
+			if err != nil {
+				t.Fatalf("json.Marshal 失败: %v", err)
+			}
 			if err := p.Init(configBytes); err != nil {
 				t.Fatalf("Init() error = %v", err)
 			}
@@ -290,7 +296,7 @@ func TestProcessor_Process(t *testing.T) {
 			}()
 
 			// 等待 Process 完成
-			err := <-done
+			err = <-done
 			if err != nil {
 				t.Fatalf("Process() error = %v", err)
 			}

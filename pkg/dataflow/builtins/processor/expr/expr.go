@@ -112,7 +112,7 @@ func (p *Processor) Process(ctx context.Context, in <-chan types.Record, out cha
 		}
 
 		// 结果已经是 bool 类型（AsBool() 保证）
-		if result.(bool) {
+		if b, ok := result.(bool); ok && b {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()

@@ -188,11 +188,15 @@ func (s *Source) convertValue(column, value string) interface{} {
 	switch typ {
 	case "int":
 		var v int
-		fmt.Sscanf(value, "%d", &v)
+		if _, err := fmt.Sscanf(value, "%d", &v); err != nil {
+			return value
+		}
 		return v
 	case "float":
 		var v float64
-		fmt.Sscanf(value, "%f", &v)
+		if _, err := fmt.Sscanf(value, "%f", &v); err != nil {
+			return value
+		}
 		return v
 	case "bool":
 		lower := strings.ToLower(value)

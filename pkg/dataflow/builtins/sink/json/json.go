@@ -11,6 +11,7 @@ import (
 
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // Sink 将数据写入 JSON 文件，支持 JSON Lines 和 JSON 数组格式
@@ -105,7 +106,10 @@ func (s *Sink) Consume(ctx context.Context, in <-chan types.Record) error {
 			s.arrayFirst = false
 
 			if s.indent == "" {
-				file.WriteString("  ")
+				if _, err := file.WriteString("  "); err != nil {
+					s.mu.Unlock()
+					return fmt.Errorf("写入缩进失败: %w", err)
+				}
 			}
 		}
 
@@ -128,7 +132,9 @@ func (s *Sink) closeFile() {
 	}
 
 	if s.format == "array" {
-		s.file.WriteString("\n]")
+		if _, err := s.file.WriteString("\n]"); err != nil {
+			logger.Warn("[json-sink] 写入数组结束失败: %v", err)
+		}
 	}
 
 	s.file.Close()

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // Sink 将数据输出到控制台
@@ -56,7 +57,11 @@ func (s *Sink) Consume(ctx context.Context, in <-chan types.Record) error {
 
 		switch s.format {
 		case "json":
-			data, _ := json.Marshal(item)
+			data, err := json.Marshal(item)
+			if err != nil {
+				logger.Warn("[output] 序列化记录失败: %v", err)
+				continue
+			}
 			fmt.Println(string(data))
 		default:
 			fmt.Printf("%+v\n", item)

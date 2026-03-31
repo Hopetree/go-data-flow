@@ -40,7 +40,7 @@ type ComponentInfo struct {
 // MetricsRecorderAware is an optional interface for components that need to record custom metrics.
 // If a component implements this interface, Flow will inject the metrics recorder after Init.
 type MetricsRecorderAware interface {
-	SetMetricsRecorder(recorder metrics.MetricsRecorder, info ComponentInfo)
+	SetMetricsRecorder(recorder metrics.Recorder, info ComponentInfo)
 }
 
 // BaseProcessor provides a default implementation of ConcurrencyCapable.
