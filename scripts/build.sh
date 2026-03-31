@@ -22,15 +22,13 @@
 
 set -e
 
-ARCH="amd64"
-
 # 默认值
 PLATFORM="all"
 ARCH="amd64"
 VERSION=""
 OUTPUT_DIR="./dist"
 BINARY_NAME="dataflow"
-MAIN_PATH="github.com/yourorg/go-data-flow/cmd/dataflow"
+MAIN_PATH="github.com/Hopetree/go-data-flow/cmd/dataflow"
 BUILD_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -71,16 +69,9 @@ clean_output() {
 build_platform() {
     local os=$1
     local arch=$2
-    local output_name="${BINARY_NAME}"
-
-    if [[ "${OUTPUT_DIR}" == "./dist" ]]; then
-        if [[ "$os" == "windows" ]]; then
-            output_name="${BINARY_NAME}-${os}-${arch}.exe"
-        else
-            output_name="${BINARY_NAME}-${os}-${arch}"
-        fi
-    elif [[ "$os" == "windows" ]]; then
-        output_name="${BINARY_NAME}.exe"
+    local output_name="${BINARY_NAME}-${os}-${arch}"
+    if [[ "$os" == "windows" ]]; then
+        output_name="${BINARY_NAME}-${os}-${arch}.exe"
     fi
 
     info "构建 ${os}/${arch}..."
