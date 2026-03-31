@@ -10,8 +10,8 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/yourorg/go-data-flow/pkg/dataflow"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 )
 
 // Source 从 Kafka Topic 消费消息

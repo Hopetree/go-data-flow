@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	csv "github.com/yourorg/go-data-flow/pkg/dataflow/builtins/source/csv"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/builtins/types"
+	csv "github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/source/csv"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 )
 
 func TestSource_Init(t *testing.T) {

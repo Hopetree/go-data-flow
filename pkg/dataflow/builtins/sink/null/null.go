@@ -4,8 +4,8 @@ package null
 import (
 	"context"
 
-	"github.com/yourorg/go-data-flow/pkg/dataflow"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 )
 
 // Sink 丢弃所有数据

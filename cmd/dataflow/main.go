@@ -6,8 +6,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/yourorg/go-data-flow/pkg/dataflow/app"
-	"github.com/yourorg/go-data-flow/pkg/logger"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/app"
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // 构建时注入的版本信息

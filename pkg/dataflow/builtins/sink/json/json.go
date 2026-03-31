@@ -9,8 +9,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/yourorg/go-data-flow/pkg/dataflow"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 )
 
 // Sink 将数据写入 JSON 文件，支持 JSON Lines 和 JSON 数组格式

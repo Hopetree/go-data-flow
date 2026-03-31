@@ -14,10 +14,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/yourorg/go-data-flow/pkg/dataflow"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/builtins/types"
-	"github.com/yourorg/go-data-flow/pkg/dataflow/metrics"
-	"github.com/yourorg/go-data-flow/pkg/logger"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/metrics"
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // Version, BuildTime, GitCommit 由 cmd/main 设置
