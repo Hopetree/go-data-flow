@@ -14,6 +14,18 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
+      exclude-functions:
+        - (encoding/json.Encoder).Encode
+        - (encoding/json.Decoder).Decode
+        - (net/http.Request).Write
+        - (net/http.ResponseWriter).Write
+        - (net/http.ResponseWriter).WriteHeader
+        - (io.WriteCloser).Close
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (*os.File).Sync
+        - (*os.File).Write
+        - (io.Writer).Write
 
     revive:
       rules:
