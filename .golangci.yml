@@ -14,14 +14,12 @@ linters:
     - goimports
     - misspell
     - revive
+    - shadow
 
 linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
-
-  govet:
-    check-shadowing: true
 
   revive:
     rules:
