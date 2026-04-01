@@ -43,7 +43,7 @@
 ### 安装
 
 ```bash
-git clone https://github.com/yourname/go-data-flow.git
+git clone https://github.com/Hopetree/go-data-flow.git
 cd go-data-flow
 go build -o dataflow ./cmd/dataflow
 ```
@@ -133,7 +133,7 @@ sink:
 ## 命令行参数
 
 ```bash
-./bin/dataflow [options]
+./dataflow [options]
 
 Options:
   -a <file>     应用配置文件路径 (默认: app.yaml)
@@ -180,6 +180,7 @@ go-data-flow/
   - [Python 脚本组件](docs/guides/04_Python脚本组件.md)
 - **设计文档** (`docs/design/`)
   - [自定义组件开发指南](docs/design/01_自定义组件开发指南.md)
+  - [租户二次开发指南](docs/design/02_租户二次开发指南.md)
 
 ## 开发
 
@@ -200,26 +201,31 @@ go test ./...
 ### 添加自定义组件
 
 ```go
-package main
+package mysource
 
 import (
+    "context"
+
     "github.com/Hopetree/go-data-flow/pkg/dataflow"
+    "github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 )
 
-// 实现 Source 接口
+// MySource 自定义 Source 组件
 type MySource struct{}
 
-func (s *MySource) Open(ctx context.Context) (<-chan dataflow.Record, error) {
-    // 实现数据读取逻辑
+func (s *MySource) Init(config []byte) error {
+    // 解析配置
+    return nil
 }
 
-func (s *MySource) Close() error {
-    // 清理资源
+func (s *MySource) Read(ctx context.Context, out chan<- types.Record) (int64, error) {
+    // 实现数据读取逻辑，发送到 out 通道
+    return 0, nil
 }
 
-// 注册组件
-func Register(registry *dataflow.Registry) {
-    registry.RegisterSource("source-my-source", func() dataflow.Source {
+// Register 注册组件到 Registry
+func Register(r *dataflow.Registry[types.Record]) {
+    r.RegisterSource("source-my-source", func() dataflow.Source[types.Record] {
         return &MySource{}
     })
 }
