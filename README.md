@@ -115,7 +115,6 @@ sink:
 | `processor-expr-filter` | 表达式求值 |
 | `processor-transform-field` | 字段转换（添加/删除/重命名字段） |
 | `processor-jq-transform` | JQ 表达式转换 |
-| `processor-aggregate-group` | 聚合计算 |
 | `processor-python-script` | Python 脚本处理 |
 
 ### Sink（输出器）
