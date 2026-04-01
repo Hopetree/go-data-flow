@@ -52,7 +52,7 @@ Python scripts act as Source/Processor/Sink via subprocess communication. `runne
 ### Built-in Components (`pkg/dataflow/builtins/`)
 
 - **Sources**: static, generator-sequence, csv-file, json-file, kafka
-- **Processors**: condition-filter, transform-field, expr, jq-transform, aggregate, python
+- **Processors**: condition-filter, transform-field, expr, jq-transform, python
 - **Sinks**: output-console, collect, null, file, csv, json, clickhouse, python
 
 ### Config Structure

@@ -3,7 +3,6 @@ package app
 
 import (
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
-	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/processor/aggregate"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/processor/condition"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/processor/expr"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/processor/jqtransform"
@@ -77,11 +76,6 @@ func RegisterBuiltinProcessors(r *dataflow.Registry[Record]) {
 	// jqtransform 组件 - jq 表达式转换
 	r.RegisterProcessor("processor-jq-transform", func() dataflow.Processor[Record] {
 		return jqtransform.New()
-	})
-
-	// aggregate 组件 - 分组聚合
-	r.RegisterProcessor("processor-aggregate-group", func() dataflow.Processor[Record] {
-		return aggregate.New()
 	})
 
 	// python 组件 - Python 脚本处理器
