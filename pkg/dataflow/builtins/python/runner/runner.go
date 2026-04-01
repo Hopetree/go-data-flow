@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/Hopetree/go-data-flow/pkg/logger"
@@ -53,6 +52,7 @@ type Runner struct {
 
 	closeOnce sync.Once
 	started   bool
+	pgidSet   bool // 是否成功设置独立进程组
 
 	// stdout 读取通道：由专用协程写入，ReadLine 从中读取
 	lineCh chan readResult
@@ -154,7 +154,6 @@ func (r *Runner) Start(ctx context.Context) error {
 	args = append(args, r.args...)
 
 	cmd := exec.CommandContext(ctx, r.pythonExec, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// 合并环境变量
 	cmd.Env = os.Environ()
@@ -191,6 +190,9 @@ func (r *Runner) Start(ctx context.Context) error {
 
 	r.cmd = cmd
 	r.started = true
+
+	// 将进程设为独立进程组，便于后续杀死整个进程组
+	r.pgidSet = setupProcessGroup(cmd.Process.Pid)
 
 	// 启动 stdout 读取协程（单一协程负责读取，避免 bufio.Scanner 并发问题）
 	r.lineCh = make(chan readResult, 100)
@@ -308,9 +310,17 @@ func (r *Runner) Close() error {
 					closeErr = fmt.Errorf("python process exit abnormal: %w", err)
 				}
 			case <-time.After(processExitTimeout):
-				// 超时，杀死整个进程组
-				if killErr := syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL); killErr != nil {
-					logger.Warn("强制杀死 Python 进程失败: %v", killErr)
+				// 超时，终止进程
+				if r.pgidSet {
+					// 已设置进程组，杀死整个进程组（包括子进程）
+					if killErr := killProcessGroup(r.cmd.Process.Pid); killErr != nil {
+						logger.Warn("强制杀死 Python 进程组失败: %v", killErr)
+					}
+				} else {
+					// 未设置进程组（Windows 或 Setpgid 失败），回退到单进程终止
+					if killErr := r.cmd.Process.Kill(); killErr != nil {
+						logger.Warn("强制杀死 Python 进程失败: %v", killErr)
+					}
 				}
 				closeErr = fmt.Errorf("python process timed out, forcibly killed")
 			}
