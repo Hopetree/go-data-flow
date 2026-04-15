@@ -54,7 +54,7 @@ type App struct {
 func NewApp(opts Options) *App {
 	app := &App{
 		options:  opts,
-		registry: dataflow.NewRegistry[Record](),
+		registry: dataflow.GetDefaultRegistry(),
 	}
 
 	// 加载应用配置

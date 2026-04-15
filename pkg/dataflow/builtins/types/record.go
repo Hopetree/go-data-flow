@@ -2,4 +2,4 @@
 package types
 
 // Record 通用数据记录类型
-type Record map[string]interface{}
+type Record = map[string]interface{}

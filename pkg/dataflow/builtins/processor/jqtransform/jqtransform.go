@@ -52,12 +52,8 @@ func (p *Processor) Init(config []byte) error {
 // Process 处理数据，使用 jq 表达式转换记录
 func (p *Processor) Process(ctx context.Context, in <-chan types.Record, out chan<- types.Record) error {
 	for item := range in {
-		// 将 types.Record 转换为 map[string]interface{}
-		// gojq 需要标准的 map 类型
-		var input map[string]interface{} = item
-
 		// 执行 jq 查询
-		iter := p.query.Run(input)
+		iter := p.query.Run(item)
 
 		for {
 			select {
@@ -83,13 +79,6 @@ func (p *Processor) Process(ctx context.Context, in <-chan types.Record, out cha
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case out <- types.Record(result):
-				}
-
-			case types.Record:
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
 				case out <- result:
 				}
 
@@ -100,7 +89,7 @@ func (p *Processor) Process(ctx context.Context, in <-chan types.Record, out cha
 						select {
 						case <-ctx.Done():
 							return ctx.Err()
-						case out <- types.Record(elemMap):
+						case out <- elemMap:
 						}
 					}
 				}

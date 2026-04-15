@@ -230,6 +230,22 @@ func Register(r *dataflow.Registry[types.Record]) {
 }
 ```
 
+也可以通过 `init()` 函数自动注册到框架全局默认注册表：
+
+```go
+func init() {
+    dataflow.GetDefaultRegistry().RegisterSource("source-my-source", func() dataflow.Source[types.Record] {
+        return &MySource{}
+    })
+}
+```
+
+然后在 main.go 中使用 blank import：
+
+```go
+import _ "my-dataflow/internal/components/mysource"
+```
+
 ## License
 
 MIT

@@ -102,3 +102,25 @@ func (r *Registry[T]) ListSinks() []string {
 	}
 	return names
 }
+
+// defaultRegistry 是框架级别的全局默认注册表。
+// 使用 map[string]interface{}] 作为泛型参数，与内置组件和 App 框架保持一致。
+// 未导出变量通过 GetDefaultRegistry() 访问，遵循 Go 惯例。
+var defaultRegistry = NewRegistry[map[string]interface{}]()
+
+// GetDefaultRegistry 返回全局默认注册表。
+// 组件可通过 init() 函数调用此方法注册自身，实现自动注册。
+// 典型用法：
+//
+//	func init() {
+//	    dataflow.GetDefaultRegistry().RegisterSource("source-my", func() dataflow.Source[map[string]interface{}] {
+//	        return &MySource{}
+//	    })
+//	}
+//
+// 然后在 main.go 中通过 blank import 触发：
+//
+//	import _ "myproject/internal/components/mysource"
+func GetDefaultRegistry() *Registry[map[string]interface{}] {
+	return defaultRegistry
+}

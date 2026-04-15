@@ -111,11 +111,6 @@ func (p *Processor) extractAndTransform(record types.Record, cfg Config) ([]type
 		result := p.mergeAndTransform(v, keepValues, cfg)
 		return []types.Record{result}, nil
 
-	case types.Record:
-		// types.Record 类型（与 map[string]interface{} 相同处理）
-		result := p.mergeAndTransform(v, keepValues, cfg)
-		return []types.Record{result}, nil
-
 	case []interface{}:
 		// 数组类型
 		if cfg.ExtractFlatten {
@@ -124,9 +119,6 @@ func (p *Processor) extractAndTransform(record types.Record, cfg Config) ([]type
 			for _, item := range v {
 				switch itemMap := item.(type) {
 				case map[string]interface{}:
-					result := p.mergeAndTransform(itemMap, keepValues, cfg)
-					results = append(results, result)
-				case types.Record:
 					result := p.mergeAndTransform(itemMap, keepValues, cfg)
 					results = append(results, result)
 				default:
@@ -158,12 +150,6 @@ func (p *Processor) getNestedValue(record types.Record, path string) interface{}
 	for _, part := range parts {
 		switch v := current.(type) {
 		case map[string]interface{}:
-			var exists bool
-			current, exists = v[part]
-			if !exists {
-				return nil
-			}
-		case types.Record:
 			var exists bool
 			current, exists = v[part]
 			if !exists {

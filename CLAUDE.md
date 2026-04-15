@@ -39,7 +39,7 @@ Optional interfaces components may implement:
 
 ### Component Registry (`registry.go`)
 
-Factory-based registration: `RegisterSource(name, builder)`, `RegisterProcessor(name, builder)`, `RegisterSink(name, builder)`. All built-ins wired in `pkg/dataflow/app/builtins.go` via `RegisterAllBuiltins()`.
+Factory-based registration: `RegisterSource(name, builder)`, `RegisterProcessor(name, builder)`, `RegisterSink(name, builder)`. A package-level `DefaultRegistry` singleton (`GetDefaultRegistry()`) is shared by `NewApp()`. Components can auto-register via `init()` + blank import. All built-ins wired in `pkg/dataflow/app/builtins.go` via `RegisterAllBuiltins()`.
 
 ### Application Framework (`pkg/dataflow/app/`)
 

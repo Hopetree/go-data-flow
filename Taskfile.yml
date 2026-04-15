@@ -1,0 +1,65 @@
+version: '3'
+
+vars:
+  BINARY_NAME: dataflow
+  BUILD_CMD: ./cmd/dataflow
+
+tasks:
+  build:
+    desc: 构建二进制文件
+    cmds:
+      - go build -o {{.BINARY_NAME}} {{.BUILD_CMD}}
+
+  run:
+    desc: 构建并运行，通过 -- 传递参数
+    cmds:
+      - go run {{.BUILD_CMD}} {{.CLI_ARGS}}
+
+  test:
+    desc: 运行全部测试
+    cmds:
+      - go test ./...
+
+  test-race:
+    desc: 运行全部测试（含竞态检测）
+    cmds:
+      - go test -race ./...
+
+  test-cover:
+    desc: 运行全部测试并生成覆盖率报告
+    cmds:
+      - go test -race -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  test-single:
+    desc: 运行单个测试，通过 -- 传递参数
+    cmds:
+      - go test -v {{.CLI_ARGS}}
+
+  lint:
+    desc: 运行 golangci-lint
+    cmds:
+      - golangci-lint run
+
+  fmt:
+    desc: 格式化代码
+    cmds:
+      - gofmt -w .
+      - goimports -w .
+
+  list:
+    desc: 列出所有已注册组件（需先 build）
+    cmds:
+      - ./{{.BINARY_NAME}} -l
+
+  release:
+    desc: 跨平台打包，通过 -- 传递参数
+    cmds:
+      - ./scripts/build.sh {{.CLI_ARGS}}
+
+  clean:
+    desc: 清理构建产物
+    cmds:
+      - rm -f {{.BINARY_NAME}}
+      - rm -f coverage.out
+      - rm -rf dist/
