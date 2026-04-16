@@ -11,9 +11,6 @@ import (
 
 func TestNewCollector(t *testing.T) {
 	collector := NewCollector("test")
-	if collector == nil {
-		t.Fatal("期望创建 Collector")
-	}
 	if collector.namespace != "test" {
 		t.Errorf("期望 namespace=test, 实际 %s", collector.namespace)
 	}
@@ -196,9 +193,6 @@ func TestMetricsServer(t *testing.T) {
 	}
 
 	server := NewServer(config)
-	if server == nil {
-		t.Fatal("期望创建 Server")
-	}
 
 	// 验证配置
 	if server.addr == "" {
@@ -218,9 +212,6 @@ func TestMetricsServerCollector(t *testing.T) {
 	})
 
 	collector := server.Collector()
-	if collector == nil {
-		t.Fatal("期望非 nil collector")
-	}
 
 	// 注册并使用指标
 	if err := collector.Register(MetricDesc{

@@ -220,9 +220,6 @@ func TestNewFlow(t *testing.T) {
 	}
 
 	flow := NewFlow[TestData](config, registry)
-	if flow == nil {
-		t.Fatal("expected non-nil flow")
-	}
 	if flow.config.Name != "test_flow" {
 		t.Errorf("expected name 'test_flow', got '%s'", flow.config.Name)
 	}
