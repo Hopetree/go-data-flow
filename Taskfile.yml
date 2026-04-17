@@ -3,12 +3,15 @@ version: '3'
 vars:
   BINARY_NAME: dataflow
   BUILD_CMD: ./cmd/dataflow
+  DIST_DIR: dist
+  LOG_DIR: log
 
 tasks:
   build:
     desc: 构建二进制文件
     cmds:
-      - go build -o {{.BINARY_NAME}} {{.BUILD_CMD}}
+      - mkdir -p {{.DIST_DIR}}
+      - go build -o {{.DIST_DIR}}/{{.BINARY_NAME}} {{.BUILD_CMD}}
 
   run:
     desc: 构建并运行，通过 -- 传递参数
@@ -50,7 +53,7 @@ tasks:
   list:
     desc: 列出所有已注册组件（需先 build）
     cmds:
-      - ./{{.BINARY_NAME}} -l
+      - ./{{.DIST_DIR}}/{{.BINARY_NAME}} -l
 
   release:
     desc: 跨平台打包，通过 -- 传递参数
@@ -60,6 +63,11 @@ tasks:
   clean:
     desc: 清理构建产物
     cmds:
-      - rm -f {{.BINARY_NAME}}
+      - rm -f {{.DIST_DIR}}/{{.BINARY_NAME}}
       - rm -f coverage.out
-      - rm -rf dist/
+
+  clean:log:
+    desc: 清理日志文件
+    cmds:
+      - rm -f {{.LOG_DIR}}/*.log
+      - rm -f {{.LOG_DIR}}/*.log.gz
