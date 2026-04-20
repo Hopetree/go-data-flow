@@ -42,6 +42,31 @@ func TestExpandEnvVars(t *testing.T) {
 			input:    "key: ${NONEXISTENT_VAR}",
 			expected: "key: ",
 		},
+		{
+			name:     "双美元符转义为单美元符",
+			input:    "value: $$in",
+			expected: "value: $in",
+		},
+		{
+			name:     "转义后不被替换为环境变量",
+			input:    "value: $${TEST_VAR}",
+			expected: "value: ${TEST_VAR}",
+		},
+		{
+			name:     "混合使用转义和变量替换",
+			input:    "a: $${TEST_VAR}, b: ${TEST_VAR}",
+			expected: "a: ${TEST_VAR}, b: hello",
+		},
+		{
+			name:     "未定义变量无花括号格式",
+			input:    "value: $in",
+			expected: "value: ",
+		},
+		{
+			name:     "未定义变量用转义保留",
+			input:    "value: $$in",
+			expected: "value: $in",
+		},
 	}
 
 	for _, tt := range tests {

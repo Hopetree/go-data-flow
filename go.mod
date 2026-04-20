@@ -7,6 +7,7 @@ require (
 	github.com/IBM/sarama v1.44.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/itchyny/gojq v0.12.18
+	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.20.5
 	go.uber.org/zap v1.27.1
 	golang.org/x/sys v0.42.0
@@ -36,7 +37,6 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/paulmach/orb v0.12.0 // indirect
