@@ -74,6 +74,11 @@ func NewApp(opts Options) *App {
 			// 初始化日志
 			if err := initLogger(cfg); err != nil {
 				logger.Warn("初始化日志失败: %v", err)
+			} else {
+				// 日志初始化成功后，输出渲染后的应用配置内容
+				if rendered, err := os.ReadFile(opts.AppConfFile); err == nil {
+					logger.Debug("加载应用配置: %s\n%s", opts.AppConfFile, string(expandEnvVars(rendered)))
+				}
 			}
 		}
 	} else {
@@ -378,6 +383,7 @@ func LoadConfig(path string) (*dataflow.FlowConfig, error) {
 	}
 
 	data = expandEnvVars(data)
+	logger.Debug("加载 Flow 配置: %s\n%s", path, string(data))
 
 	var config dataflow.FlowConfig
 
