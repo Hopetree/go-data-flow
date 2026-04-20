@@ -23,6 +23,7 @@ var (
 	configFile  string
 	configDir   string
 	configs     string
+	envFile     string
 	listOnly    bool
 	showVersion bool
 )
@@ -32,6 +33,7 @@ func init() {
 	flag.StringVar(&configFile, "c", "", "Flow 配置文件路径")
 	flag.StringVar(&configDir, "d", "", "配置文件目录")
 	flag.StringVar(&configs, "C", "", "多个配置文件，逗号分隔")
+	flag.StringVar(&envFile, "e", "", ".env 文件路径 (默认: .env)")
 	flag.BoolVar(&listOnly, "l", false, "列出所有组件")
 	flag.BoolVar(&showVersion, "v", false, "显示版本")
 }
@@ -56,6 +58,7 @@ func main() {
 		ConfigFile:  configFile,
 		ConfigDir:   configDir,
 		Configs:     configs,
+			EnvFile:     envFile,
 	})
 
 	// 注册内置组件

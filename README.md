@@ -139,6 +139,7 @@ Options:
   -c <file>     Flow 配置文件路径
   -d <dir>      配置文件目录
   -C <files>    多个配置文件，逗号分隔
+  -e <file>     .env 文件路径 (默认: .env)
   -l            列出所有组件
   -v            显示版本
 ```

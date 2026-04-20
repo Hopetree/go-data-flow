@@ -40,6 +40,8 @@ type Options struct {
 	ConfigDir string
 	// Configs 多个配置文件（逗号分隔）
 	Configs string
+	// EnvFile .env 文件路径，为空时默认加载当前目录 .env
+	EnvFile string
 }
 
 // App 数据流应用
@@ -56,6 +58,9 @@ func NewApp(opts Options) *App {
 		options:  opts,
 		registry: dataflow.GetDefaultRegistry(),
 	}
+
+	// 加载 .env 环境变量（在读取配置文件之前）
+	app.loadEnv(opts.EnvFile)
 
 	// 加载应用配置
 	if opts.AppConfFile != "" {
@@ -77,6 +82,19 @@ func NewApp(opts Options) *App {
 	}
 
 	return app
+}
+
+// loadEnv 加载 .env 环境变量文件
+// envFile 为空时加载当前目录 .env，文件不存在时静默跳过
+func (a *App) loadEnv(envFile string) {
+	target := envFile
+	if target == "" {
+		target = ".env"
+	}
+	if err := LoadEnv(target); err != nil {
+		// godotenv 文件不存在时返回 nil，此处仅处理权限等意外错误
+		_ = err
+	}
 }
 
 // initDefaultLogger 初始化默认日志配置
@@ -359,6 +377,8 @@ func LoadConfig(path string) (*dataflow.FlowConfig, error) {
 		return nil, err
 	}
 
+	data = expandEnvVars(data)
+
 	var config dataflow.FlowConfig
 
 	switch filepath.Ext(path) {
@@ -385,6 +405,8 @@ func LoadAppConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	data = expandEnvVars(data)
 
 	var config Config
 

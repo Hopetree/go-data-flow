@@ -1,0 +1,23 @@
+# 示例: 环境变量配置
+# 演示通过 ${VAR} 语法在配置中引用环境变量
+#
+# 使用方式:
+#   ./dataflow -a examples/standard/app.yaml -e examples/standard/.env -c examples/standard/flow/05-env-config.yaml
+#
+# 或者直接用系统环境变量:
+#   OUTPUT_FORMAT=json COUNT=5 ./dataflow -a examples/standard/app.yaml -c examples/standard/flow/05-env-config.yaml
+
+name: env-config-flow
+buffer_size: 10
+
+source:
+  name: source-generator-sequence
+  config:
+    count: ${COUNT}
+    start: 1
+
+sink:
+  name: sink-output-console
+  config:
+    format: ${OUTPUT_FORMAT}
+    limit: 100
