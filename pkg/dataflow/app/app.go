@@ -90,15 +90,27 @@ func NewApp(opts Options) *App {
 }
 
 // loadEnv 加载 .env 环境变量文件
-// envFile 为空时加载当前目录 .env，文件不存在时静默跳过
+// 指定 -e 时文件必须存在，未指定时 .env 不存在则跳过
 func (a *App) loadEnv(envFile string) {
 	target := envFile
+	explicit := target != ""
 	if target == "" {
 		target = ".env"
 	}
+
+	// 检查文件是否存在
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		if explicit {
+			fmt.Fprintf(os.Stderr, "环境变量文件不存在: %s\n", target)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// 加载失败则报错退出
 	if err := LoadEnv(target); err != nil {
-		// godotenv 文件不存在时返回 nil，此处仅处理权限等意外错误
-		_ = err
+		fmt.Fprintf(os.Stderr, "加载环境变量文件失败 %s: %v\n", target, err)
+		os.Exit(1)
 	}
 }
 

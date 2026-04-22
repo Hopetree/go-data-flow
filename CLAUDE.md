@@ -57,7 +57,7 @@ Python scripts act as Source/Processor/Sink via subprocess communication. `runne
 
 ### Config Structure
 
-Flow YAML files define: `name`, `buffer_size`, `source` (single), `processors[]` (chain), `sink` (single). CLI flags: `-a` (app config), `-c` (single flow), `-d` (directory scan `*.yaml`/`*.yml`), `-C` (comma-separated flows), `-e` (`.env` file, defaults to `.env`), `-l`, `-v`. Environment variable substitution via `${VAR}` / `$VAR` is applied before YAML parsing (both app.yaml and flow YAML).
+Flow YAML files define: `name`, `buffer_size`, `source` (single), `processors[]` (chain), `sink` (single). CLI flags: `-a` (app config), `-c` (single flow), `-d` (directory scan `*.yaml`/`*.yml`), `-C` (comma-separated flows), `-e` (`.env` file; defaults to auto-loading `.env` if present, must exist when explicitly specified), `-l`, `-v`. Environment variable substitution via `${VAR}` / `$VAR` is applied before YAML parsing (both app.yaml and flow YAML).
 
 ## Project Structure
 
