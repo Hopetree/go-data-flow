@@ -161,7 +161,7 @@ func (a *App) Run(ctx context.Context) error {
 	defer a.stopMetricsServer()
 
 	// 收集配置文件
-	configFiles := a.collectConfigFiles()
+	configFiles := a.CollectConfigFiles()
 	if len(configFiles) == 0 {
 		return fmt.Errorf("没有找到配置文件")
 	}
@@ -189,8 +189,8 @@ func (a *App) Run(ctx context.Context) error {
 	return a.runSequential(ctx, configFiles)
 }
 
-// collectConfigFiles 收集所有配置文件
-func (a *App) collectConfigFiles() []string {
+// CollectConfigFiles 收集所有配置文件路径
+func (a *App) CollectConfigFiles() []string {
 	var files []string
 
 	// 单个配置文件
@@ -253,6 +253,11 @@ func (a *App) runSingle(ctx context.Context, configFile string) error {
 
 	// 打印详细指标
 	a.printMetricsSummary(flow, config.Name)
+
+	// 打印 DLQ 统计
+	if dlq := flow.DLQ(); dlq != nil && dlq.Enabled() {
+		logger.Info("[%s] DLQ: %d 条错误记录已写入", config.Name, dlq.Count())
+	}
 
 	return flow.Close()
 }
@@ -463,6 +468,57 @@ func LoadAppConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
+// CheckEnvVars 检查配置文件中引用的环境变量是否都已设置
+// 返回缺失的环境变量列表，空列表表示全部满足
+func CheckEnvVars(configFiles []string) []string {
+	var missing []string
+	checked := make(map[string]bool)
+	for _, path := range configFiles {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		// 从原始内容中提取 ${VAR} 变量名（在展开前检查）
+		s := string(data)
+		for {
+			start := strings.Index(s, "${")
+			if start == -1 {
+				break
+				}
+			s = s[start+2:]
+			end := strings.Index(s, "}")
+			if end == -1 {
+				break
+				}
+			varName := s[:end]
+			s = s[end+1:]
+			if varName == "" || checked[varName] {
+				continue
+			}
+			checked[varName] = true
+			if _, ok := os.LookupEnv(varName); !ok {
+				missing = append(missing, varName)
+			}
+		}
+	}
+	return missing
+}
+
+// ValidateConfigs 解析并验证配置文件，不执行 Flow
+func ValidateConfigs(configFiles []string) error {
+	for _, path := range configFiles {
+		config, err := LoadConfig(path)
+		if err != nil {
+			return fmt.Errorf("[%s] 配置解析失败: %w", path, err)
+		}
+		if err := config.ValidateBuild(); err != nil {
+			return fmt.Errorf("[%s] 配置验证失败: %w", config.Name, err)
+		}
+		logger.Info("[%s] 配置验证通过", config.Name)
+	}
+	return nil
+}
+
 // PrintVersion 打印版本信息
 func PrintVersion() {
 	fmt.Printf("go-data-flow %s (built at %s, commit %s)\n", Version, BuildTime, GitCommit)
@@ -479,6 +535,9 @@ func PrintUsage() {
 	fmt.Println("  -C <files>  多个配置文件，逗号分隔")
 	fmt.Println("  -l          列出所有组件")
 	fmt.Println("  -v          显示版本")
+	fmt.Println("  --validate  只验证配置，不执行 Flow")
+	fmt.Println("  --env-check  检查环境变量是否已设置")
+	fmt.Println("  --list-flows 列出发现的 Flow 配置文件")
 	fmt.Println()
 	fmt.Println("示例:")
 	fmt.Println("  dataflow -a app.yaml -c config.yaml")

@@ -7,6 +7,21 @@
 - **MINOR**: 新功能（向下兼容）
 - **PATCH**: Bug 修复、文档、构建等
 
+## [v0.2.5] - 2026-04-17
+
+### 新功能
+
+- 优雅关闭（Graceful Shutdown）：收到 SIGINT/SIGTERM 后停止 source，等待 channel 中剩余数据被 processor 和 sink 消费完毕后再退出，支持 `shutdown_timeout` 配置（默认 30 秒）
+- Flow 错误信息聚合：`flow.Run()` 现在收集所有组件错误并使用 `errors.Join()` 聚合返回，不再只返回第一个错误
+- CLI 增强：新增 `--validate`（验证配置）、`--env-check`（检查环境变量）、`--list-flows`（列出配置文件）参数
+- 死信队列（DLQ）：新增 `error_handling.dlq` 配置，processor/sink 错误不再中断 flow，而是路由到指定 sink 记录错误元数据（组件名、错误信息、时间戳）
+- 健康检查端点：Prometheus 服务器新增 `/health` 端点，返回 `{"status":"ok"}`，用于容器编排
+
+### 配置
+
+- `FlowConfig` 新增 `shutdown_timeout` 字段（单位秒，默认 30），支持 YAML/JSON 配置
+- `FlowConfig` 新增 `error_handling.dlq` 字段，支持配置 DLQ sink
+
 ## [v0.2.4] - 2026-04-23
 
 ### 修复

@@ -6,11 +6,32 @@ type FlowConfig struct {
 	Name string `yaml:"name" json:"name"`
 	// BufferSize is the channel buffer size between components.
 	BufferSize int `yaml:"buffer_size" json:"buffer_size"`
+	// ShutdownTimeout 优雅关闭超时时间（秒）。
+	// 收到 SIGINT/SIGTERM 后，停止 source 并等待 channel 中剩余数据被消费完毕。
+	// 默认 30 秒。设置为 0 可禁用优雅关闭。
+	ShutdownTimeout int `yaml:"shutdown_timeout" json:"shutdown_timeout"`
 	// Source is the source component configuration.
 	Source ComponentSpec `yaml:"source" json:"source"`
 	// Processors is the list of processor configurations (executed in order).
 	Processors []ComponentSpec `yaml:"processors" json:"processors"`
 	// Sink is the sink component configuration.
+	Sink ComponentSpec `yaml:"sink" json:"sink"`
+	// ErrorHandling 错误处理配置
+	ErrorHandling ErrorHandling `yaml:"error_handling" json:"error_handling"`
+}
+
+// ErrorHandling 错误处理配置
+type ErrorHandling struct {
+	// DLQ 死信队列配置
+	DLQ DLQConfig `yaml:"dlq" json:"dlq"`
+}
+
+// DLQConfig 死信队列配置
+// 启用后，processor/sink 的错误不会中断 flow，而是路由到指定的 sink
+type DLQConfig struct {
+	// Enabled 是否启用死信队列
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	// Sink 用于接收错误记录的 sink 组件配置
 	Sink ComponentSpec `yaml:"sink" json:"sink"`
 }
 
@@ -34,6 +55,9 @@ type ComponentSpec struct {
 func (c *FlowConfig) SetDefaults() {
 	if c.BufferSize <= 0 {
 		c.BufferSize = 100
+	}
+	if c.ShutdownTimeout <= 0 {
+		c.ShutdownTimeout = 30
 	}
 }
 

@@ -3,11 +3,13 @@ package dataflow
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/metrics"
 )
 
@@ -33,6 +35,9 @@ type Flow[T any] struct {
 
 	// 指标收集
 	flowMetrics *metrics.FlowMetrics
+
+	// 死信队列
+dlq *DLQ
 }
 
 // NewFlow 创建一个新的 Flow 实例。
@@ -126,6 +131,19 @@ func (f *Flow[T]) Build() error {
 	// 注入 Sink 的 Recorder
 	f.injectMetricsRecorder(sink, "sink", "sink")
 
+	// 构建 DLQ（如有配置）
+	if f.config.ErrorHandling.DLQ.Enabled {
+		rec, ok := any(f.registry).(*Registry[types.Record])
+		if !ok {
+			return fmt.Errorf("DLQ 不支持当前泛型类型")
+		}
+		dlq, err := NewDLQ(f.config.ErrorHandling.DLQ, rec)
+		if err != nil {
+			return fmt.Errorf("DLQ 初始化失败: %w", err)
+		}
+		f.dlq = dlq
+	}
+
 	return nil
 }
 
@@ -157,22 +175,27 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 		channels[i] = make(chan T, f.config.BufferSize)
 	}
 
+	// 为 source 创建独立的可取消 context，用于优雅关闭时停止 source
+	sourceCtx, sourceCancel := context.WithCancel(ctx)
+
 	var wg sync.WaitGroup
 	errCh := make(chan error, numChannels+1)
 
-	// 启动 Source（单 goroutine）
+	// 启动 Source（单 goroutine，使用 sourceCtx）
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		defer close(channels[0])
 		m := f.flowMetrics.GetOrCreate("source")
-		n, err := f.source.Read(ctx, channels[0])
+		n, err := f.source.Read(sourceCtx, channels[0])
 		m.RecordOut(n) // source 输出记录
 		f.stats.AddIn(n)
 		if err != nil {
 			m.RecordError(1)
 			f.stats.AddError(1)
-			errCh <- fmt.Errorf("source: %w", err)
+			if f.handleComponentError("source", "source", fmt.Errorf("source: %w", err)) {
+				errCh <- fmt.Errorf("source: %w", err)
+			}
 		}
 	}()
 
@@ -213,7 +236,10 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 				if err := p.Process(ctx, wrappedIn, wrappedOut); err != nil {
 					m.RecordError(1)
 					f.stats.AddError(1)
-					errCh <- fmt.Errorf("processor[%d]: %w", idx, err)
+					compName := fmt.Sprintf("processor[%d]", idx)
+					if f.handleComponentError(compName, "processor", fmt.Errorf("processor[%d]: %w", idx, err)) {
+						errCh <- fmt.Errorf("processor[%d]: %w", idx, err)
+					}
 				}
 				m.RecordDuration(time.Since(start).Seconds())
 				close(wrappedOut) // Process 返回后关闭，触发输出包装协程结束
@@ -256,13 +282,16 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 						if err := p.Process(ctx, fanOutCh, fanInCh); err != nil {
 							m.RecordError(1)
 							f.stats.AddError(1)
-							select {
-							case errCh <- fmt.Errorf("processor[%d]: %w", idx, err):
-							default:
+							compName := fmt.Sprintf("processor[%d]", idx)
+							if f.handleComponentError(compName, "processor", fmt.Errorf("processor[%d]: %w", idx, err)) {
+								select {
+								case errCh <- fmt.Errorf("processor[%d]: %w", idx, err):
+								default:
+								}
 							}
 						}
 						m.RecordDuration(time.Since(start).Seconds())
-					}()
+						}()
 				}
 
 				// 将合并后的输出写入下一阶段
@@ -304,11 +333,13 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 		if err := f.sink.Consume(ctx, countedCh); err != nil {
 			m.RecordError(1)
 			f.stats.AddError(1)
-			errCh <- fmt.Errorf("sink: %w", err)
-		}
+			if f.handleComponentError("sink", "sink", fmt.Errorf("sink: %w", err)) {
+				errCh <- fmt.Errorf("sink: %w", err)
+			}
+		} // close if err
 		close(sinkDone) // 通知 wrapper 停止转发，切换为排空模式
 		m.RecordDuration(time.Since(start).Seconds())
-	}()
+		}()
 
 	// 等待完成
 	done := make(chan struct{})
@@ -320,20 +351,44 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 
 	// 等待结果
 	select {
-	case <-ctx.Done():
-		f.recordDuration()
-		return ctx.Err()
-	case err := <-errCh:
-		// 排空剩余错误
-		go func() {
-			for range errCh {
-			}
-		}()
-		f.recordDuration()
-		return err
 	case <-done:
+		// 正常完成：所有数据处理完毕
+		sourceCancel()
 		f.recordDuration()
+		var errs []error
+		for e := range errCh {
+			errs = append(errs, e)
+		}
+		if len(errs) > 0 {
+			return errors.Join(errs...)
+		}
 		return nil
+	case <-ctx.Done():
+		// 收到中断信号：优雅关闭
+		// 1. 停止 source（不再生产新数据）
+		sourceCancel()
+		// 2. 等待 channel 中的剩余数据被 processor 和 sink 处理完毕
+		shutdownTimeout := time.Duration(f.config.ShutdownTimeout) * time.Second
+		select {
+		case <-done:
+			f.recordDuration()
+			var errs []error
+			errs = append(errs, ctx.Err())
+			for e := range errCh {
+				errs = append(errs, e)
+			}
+			return errors.Join(errs...)
+		case <-time.After(shutdownTimeout):
+			// 超时强制退出
+			f.recordDuration()
+			var errs []error
+			errs = append(errs, ctx.Err())
+			errs = append(errs, fmt.Errorf("graceful shutdown timed out after %v", shutdownTimeout))
+			for e := range errCh {
+				errs = append(errs, e)
+			}
+			return errors.Join(errs...)
+		}
 	}
 }
 
@@ -401,6 +456,12 @@ func (f *Flow[T]) Close() error {
 				err = e
 			}
 		}
+		// 关闭 DLQ
+		if f.dlq != nil {
+			if e := f.dlq.Close(); e != nil && err == nil {
+				err = e
+			}
+		}
 	})
 	return err
 }
@@ -439,4 +500,20 @@ func (f *Flow[T]) injectMetricsRecorder(component interface{}, componentName str
 		}
 		aware.SetMetricsRecorder(recorder, info)
 	}
+}
+
+// DLQ 返回死信队列实例，未配置时返回 nil
+func (f *Flow[T]) DLQ() *DLQ {
+	return f.dlq
+}
+
+// handleComponentError 处理组件错误。
+// DLQ 启用时路由到 DLQ 并返回 false（不中断 flow）；
+// DLQ 未启用时返回 true（应发送到 errCh 中断 flow）。
+func (f *Flow[T]) handleComponentError(componentName, componentType string, err error) bool {
+	if f.dlq != nil && f.dlq.Enabled() {
+		f.dlq.Send(f.config.Name, componentName, componentType, err.Error())
+		return false // 不中断 flow
+	}
+	return true // 应中断 flow
 }

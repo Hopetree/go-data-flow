@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/app"
@@ -19,13 +20,16 @@ var (
 
 // 命令行参数
 var (
-	appConfFile string
-	configFile  string
-	configDir   string
-	configs     string
-	envFile     string
-	listOnly    bool
-	showVersion bool
+	appConfFile  string
+	configFile   string
+	configDir    string
+	configs      string
+	envFile      string
+	listOnly     bool
+	showVersion  bool
+	validateOnly bool
+	envCheckOnly bool
+	listFlows    bool
 )
 
 func init() {
@@ -36,6 +40,9 @@ func init() {
 	flag.StringVar(&envFile, "e", "", ".env 文件路径 (默认: .env)")
 	flag.BoolVar(&listOnly, "l", false, "列出所有组件")
 	flag.BoolVar(&showVersion, "v", false, "显示版本")
+	flag.BoolVar(&validateOnly, "validate", false, "只验证配置，不执行 Flow")
+	flag.BoolVar(&envCheckOnly, "env-check", false, "检查环境变量是否已设置")
+	flag.BoolVar(&listFlows, "list-flows", false, "列出发现的 Flow 配置文件")
 }
 
 func main() {
@@ -58,7 +65,7 @@ func main() {
 		ConfigFile:  configFile,
 		ConfigDir:   configDir,
 		Configs:     configs,
-			EnvFile:     envFile,
+		EnvFile:     envFile,
 	})
 
 	// 注册内置组件
@@ -70,8 +77,55 @@ func main() {
 		return
 	}
 
+	// 收集配置文件
+	configFiles := application.CollectConfigFiles()
+
+	// --list-flows：列出发现的 Flow 配置文件
+	if listFlows {
+		if len(configFiles) == 0 {
+			fmt.Println("没有找到配置文件")
+			os.Exit(1)
+		}
+		for _, f := range configFiles {
+			fmt.Println(f)
+		}
+		return
+	}
+
+	// --env-check：检查环境变量是否已设置
+	if envCheckOnly {
+		if len(configFiles) == 0 {
+			fmt.Println("没有找到配置文件")
+			os.Exit(1)
+		}
+		missing := app.CheckEnvVars(configFiles)
+		if len(missing) > 0 {
+			fmt.Printf("缺少以下环境变量:\n")
+			for _, v := range missing {
+				fmt.Printf("  %s\n", v)
+			}
+			os.Exit(1)
+		}
+		fmt.Println("所有环境变量检查通过")
+		return
+	}
+
+	// --validate：只验证配置，不执行 Flow
+	if validateOnly {
+		if len(configFiles) == 0 {
+			fmt.Println("没有找到配置文件")
+			os.Exit(1)
+		}
+		if err := app.ValidateConfigs(configFiles); err != nil {
+			fmt.Printf("配置验证失败: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("所有配置验证通过")
+		return
+	}
+
 	// 检查是否有配置
-	if configFile == "" && configDir == "" && configs == "" {
+	if len(configFiles) == 0 {
 		app.PrintUsage()
 		os.Exit(1)
 	}
