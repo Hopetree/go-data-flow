@@ -35,8 +35,12 @@ type Recorder interface {
 type PrometheusCollector interface {
 	// AddCounter 增加计数器值
 	AddCounter(name string, value float64, labels prometheus.Labels)
+	// SetGauge 设置 Gauge 值
+	SetGauge(name string, value float64, labels prometheus.Labels)
 	// ObserveHistogram 观察 Histogram 值
 	ObserveHistogram(name string, value float64, labels prometheus.Labels)
+	// ObserveSummary 观察 Summary 值
+	ObserveSummary(name string, value float64, labels prometheus.Labels)
 }
 
 // ComponentMetrics 组件级别的指标
@@ -114,7 +118,7 @@ func (m *ComponentMetrics) AddCounter(name string, value float64, labels prometh
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.AddCounter(name, value, mergedLabels)
+	m.promCollector.SetGauge(name, value, mergedLabels)
 }
 
 // SetGauge 设置自定义 Gauge 指标
@@ -129,7 +133,7 @@ func (m *ComponentMetrics) SetGauge(name string, value float64, labels prometheu
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.AddCounter(name, value, mergedLabels)
+	m.promCollector.SetGauge(name, value, mergedLabels)
 }
 
 // ObserveHistogram 观察自定义 Histogram 指标
@@ -144,7 +148,7 @@ func (m *ComponentMetrics) ObserveHistogram(name string, value float64, labels p
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.ObserveHistogram(name, value, mergedLabels)
+	m.promCollector.ObserveSummary(name, value, mergedLabels)
 }
 
 // ObserveSummary 观察自定义 Summary 指标
@@ -159,7 +163,7 @@ func (m *ComponentMetrics) ObserveSummary(name string, value float64, labels pro
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.ObserveHistogram(name, value, mergedLabels)
+	m.promCollector.ObserveSummary(name, value, mergedLabels)
 }
 
 // Snapshot 返回指标快照

@@ -2,13 +2,14 @@
 package metrics
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // MetricType 指标类型
@@ -286,7 +287,7 @@ func (s *Server) Collector() *Collector {
 
 // Start 启动服务器
 func (s *Server) Start() error {
-	fmt.Printf("Prometheus metrics 服务器启动: http://%s%s\n", s.addr, s.path)
+	logger.Info("Prometheus metrics 服务器启动: http://%s%s", s.addr, s.path)
 	return s.server.ListenAndServe()
 }
 
@@ -302,7 +303,7 @@ var once sync.Once
 // Default 返回默认指标收集器
 func Default() *Collector {
 	once.Do(func() {
-		defaultCollector = NewCollector("procflow")
+		defaultCollector = NewCollector("dataflow")
 		prometheus.MustRegister(defaultCollector.registry)
 	})
 	return defaultCollector

@@ -5,13 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/IBM/sarama"
 
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/Hopetree/go-data-flow/pkg/logger"
 )
 
 // Source 从 Kafka Topic 消费消息
@@ -157,7 +157,7 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 
 	// 等待消费者就绪
 	<-s.handler.ready
-	log.Printf("[kafka] 已连接到 %v, topic=%s, group=%s", s.config.Brokers, s.config.Topic, s.config.GroupID)
+	logger.Info("[kafka] 已连接到 %v, topic=%s, group=%s", s.config.Brokers, s.config.Topic, s.config.GroupID)
 
 	// 处理消息
 	for {
@@ -165,14 +165,14 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 		case <-ctx.Done():
 			// 优雅关闭
 			if closeErr := s.Close(); closeErr != nil {
-				log.Printf("[kafka] 关闭失败: %v", closeErr)
+				logger.Warn("[kafka] 关闭失败: %v", closeErr)
 			}
 			wg.Wait()
 			return count, ctx.Err()
 
 		case err := <-errCh:
 			if closeErr := s.Close(); closeErr != nil {
-				log.Printf("[kafka] 关闭失败: %v", closeErr)
+				logger.Warn("[kafka] 关闭失败: %v", closeErr)
 			}
 			wg.Wait()
 			return count, err
@@ -197,7 +197,7 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 				count++
 			case <-ctx.Done():
 				if closeErr := s.Close(); closeErr != nil {
-					log.Printf("[kafka] 关闭失败: %v", closeErr)
+					logger.Warn("[kafka] 关闭失败: %v", closeErr)
 				}
 				wg.Wait()
 				return count, ctx.Err()

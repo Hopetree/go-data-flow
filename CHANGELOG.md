@@ -7,6 +7,18 @@
 - **MINOR**: 新功能（向下兼容）
 - **PATCH**: Bug 修复、文档、构建等
 
+## [v0.2.4] - 2026-04-23
+
+### 修复
+
+- 修复 `SetGauge` 错误调用 `AddCounter` 的 bug，补全 `PrometheusCollector` 接口缺失的 `SetGauge` 和 `ObserveSummary` 方法
+- 修复 `ObserveSummary` 错误调用 `ObserveHistogram` 的 bug
+- 修复 Prometheus 默认 namespace 从 `"procflow"` 更正为 `"dataflow"`
+
+### 其他
+
+- 统一日志调用：`prometheus.go` 和 `kafka.go` 中的 `fmt.Printf`/`log.Printf` 替换为框架 `logger`
+
 ## [v0.2.3] - 2026-04-22
 
 ### 修复
