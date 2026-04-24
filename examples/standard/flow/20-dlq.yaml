@@ -1,0 +1,40 @@
+# 示例: 死信队列 (DLQ)
+# 演示 error_handling.dlq 配置，组件错误不会中断 Flow
+#
+# 本示例使用 source-json-file 读取不存在的文件，source 启动时会报错。
+# 错误信息会被路由到 DLQ sink 而非中断 Flow。
+#
+# 使用方式:
+#   ./dataflow -a examples/standard/app.yaml -c examples/standard/flow/20-dlq.yaml
+#
+# 运行后查看:
+#   cat log/dlq.log - DLQ 中的错误记录
+#
+# 对比：禁用 DLQ 后运行同样的 flow 会因错误中断
+#   （将 error_handling.dlq.enabled 改为 false 即可对比）
+
+name: dlq-demo-flow
+buffer_size: 10
+
+# 故意指向不存在的文件，触发 source 错误
+source:
+  name: source-json-file
+  config:
+    file_path: ./data/not-exist.json
+    format: lines
+
+sink:
+  name: sink-output-console
+  config:
+    format: json
+
+# 死信队列配置：错误记录写入 JSON 文件
+error_handling:
+  dlq:
+    enabled: true
+    sink:
+      name: sink-json-file
+      config:
+        file_path: ./log/dlq.jsonl
+        format: lines
+        append: true
