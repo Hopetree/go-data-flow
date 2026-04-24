@@ -533,6 +533,7 @@ func PrintUsage() {
 	fmt.Println("  -c <file>   Flow 配置文件路径")
 	fmt.Println("  -d <dir>    配置文件目录")
 	fmt.Println("  -C <files>  多个配置文件，逗号分隔")
+	fmt.Println("  -e <file>   .env 文件路径 (默认: .env)")
 	fmt.Println("  -l          列出所有组件")
 	fmt.Println("  -v          显示版本")
 	fmt.Println("  --validate  只验证配置，不执行 Flow")
@@ -543,4 +544,6 @@ func PrintUsage() {
 	fmt.Println("  dataflow -a app.yaml -c config.yaml")
 	fmt.Println("  dataflow -a app.yaml -d examples/config/")
 	fmt.Println("  dataflow -C config1.yaml,config2.yaml")
+	fmt.Println("  dataflow -a app.yaml -c config.yaml --validate")
+	fmt.Println("  dataflow -a app.yaml -d flows/ --env-check")
 }

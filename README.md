@@ -135,6 +135,9 @@ Options:
   -e <file>     .env 文件路径（默认自动加载当前目录 .env，-e 指定时文件必须存在）
   -l            列出所有组件
   -v            显示版本
+  --validate    只验证配置，不执行 Flow
+  --env-check   检查环境变量是否已设置
+  --list-flows  列出发现的 Flow 配置文件
 ```
 
 ## 项目结构
