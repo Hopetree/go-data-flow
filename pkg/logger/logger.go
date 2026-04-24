@@ -37,7 +37,7 @@ type Logger struct {
 }
 
 var (
-	mu sync.RWMutex
+	mu            sync.RWMutex
 	defaultLogger *Logger
 	once          sync.Once
 )
@@ -116,9 +116,9 @@ func NewLogger(cfg Config) (*Logger, error) {
 		// 使用 lumberjack 实现日志切割
 		writer = zapcore.AddSync(&lumberjack.Logger{
 			Filename:   cfg.Output,
-			MaxSize:    cfg.MaxSize,    // MB
+			MaxSize:    cfg.MaxSize, // MB
 			MaxBackups: cfg.MaxBackups,
-			MaxAge:     cfg.MaxAge,     // 天
+			MaxAge:     cfg.MaxAge, // 天
 			Compress:   cfg.Compress,
 		})
 	}
@@ -138,7 +138,7 @@ func NewLogger(cfg Config) (*Logger, error) {
 
 	return &Logger{
 		SugaredLogger: zapLogger.Sugar(),
-		config:         cfg,
+		config:        cfg,
 	}, nil
 }
 
@@ -215,7 +215,7 @@ func Panic(format string, args ...interface{}) {
 func With(fields ...interface{}) *Logger {
 	return &Logger{
 		SugaredLogger: Global().With(fields...),
-		config:         Global().config,
+		config:        Global().config,
 	}
 }
 

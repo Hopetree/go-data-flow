@@ -16,7 +16,7 @@ import (
 type MetricType int
 
 const (
-// MetricTypeCounter 计数器指标类型
+	// MetricTypeCounter 计数器指标类型
 	MetricTypeCounter MetricType = iota
 	// MetricTypeGauge Gauge 指标类型
 	MetricTypeGauge
@@ -201,9 +201,9 @@ func (c *Collector) Handler() http.Handler {
 
 // Server Prometheus 指标服务器
 type Server struct {
-	addr     string
-	path     string
-	server   *http.Server
+	addr      string
+	path      string
+	server    *http.Server
 	collector *Collector
 }
 

@@ -484,12 +484,12 @@ func CheckEnvVars(configFiles []string) []string {
 			start := strings.Index(s, "${")
 			if start == -1 {
 				break
-				}
+			}
 			s = s[start+2:]
 			end := strings.Index(s, "}")
 			if end == -1 {
 				break
-				}
+			}
 			varName := s[:end]
 			s = s[end+1:]
 			if varName == "" || checked[varName] {

@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/itchyny/gojq"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/itchyny/gojq"
 )
 
 // Processor 使用 jq 语法进行数据转换

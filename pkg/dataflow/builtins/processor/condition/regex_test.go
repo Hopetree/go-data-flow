@@ -12,12 +12,12 @@ import (
 func TestCompareRegex(t *testing.T) {
 	// 预编译正则表达式用于测试
 	patterns := map[string]*regexp.Regexp{
-		"simple":    regexp.MustCompile(`^user-\d+$`),
-		"email":     regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
-		"phone":     regexp.MustCompile(`^\d{3}-\d{3}-\d{4}$`),
-		"ip":        regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$`),
-		"empty":     regexp.MustCompile(`^$`),
-		"any":       regexp.MustCompile(`.*`),
+		"simple": regexp.MustCompile(`^user-\d+$`),
+		"email":  regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
+		"phone":  regexp.MustCompile(`^\d{3}-\d{3}-\d{4}$`),
+		"ip":     regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$`),
+		"empty":  regexp.MustCompile(`^$`),
+		"any":    regexp.MustCompile(`.*`),
 	}
 
 	tests := []struct {

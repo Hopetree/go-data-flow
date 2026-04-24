@@ -16,15 +16,15 @@ import (
 
 // Sink 将数据写入 CSV 文件
 type Sink struct {
-	filePath    string
-	separator   rune
-	headers     []string
-	append      bool
-	flushEvery  int
-	file        *os.File
-	writer      *csv.Writer
-	mu          sync.Mutex
-	count       int
+	filePath   string
+	separator  rune
+	headers    []string
+	append     bool
+	flushEvery int
+	file       *os.File
+	writer     *csv.Writer
+	mu         sync.Mutex
+	count      int
 }
 
 // Config Sink 的配置

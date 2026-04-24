@@ -53,10 +53,10 @@ func TestProcessor_Process_Gt(t *testing.T) {
 				Value: 50, // int
 			},
 			input: []types.Record{
-				{"score": 50.0},  // float64, not > 50
-				{"score": 50},    // int, not > 50
-				{"score": 60.0},  // float64, > 50
-				{"score": 40.0},  // float64, not > 50
+				{"score": 50.0}, // float64, not > 50
+				{"score": 50},   // int, not > 50
+				{"score": 60.0}, // float64, > 50
+				{"score": 40.0}, // float64, not > 50
 			},
 			expected: 1,
 		},
@@ -70,7 +70,7 @@ func TestProcessor_Process_Gt(t *testing.T) {
 			input: []types.Record{
 				{"name": "alice"},
 				{"name": "bob"},
-				{"name": "mike"},  // "mike" > "m" (prefix comparison)
+				{"name": "mike"}, // "mike" > "m" (prefix comparison)
 				{"name": "zack"},
 			},
 			expected: 2, // "mike" and "zack" > "m"

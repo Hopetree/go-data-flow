@@ -261,9 +261,9 @@ func TestBuildValueSet(t *testing.T) {
 
 func TestValueInSet(t *testing.T) {
 	set := map[interface{}]bool{
-		1:   true,
-		2:   true,
-		1.0: false, // 注意：1 和 1.0 在 map 中是不同的 key
+		1:       true,
+		2:       true,
+		1.0:     false, // 注意：1 和 1.0 在 map 中是不同的 key
 		"hello": true,
 	}
 

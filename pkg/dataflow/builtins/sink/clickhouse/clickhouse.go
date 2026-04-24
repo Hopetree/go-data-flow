@@ -51,9 +51,9 @@ type Config struct {
 	FieldMapping map[string]string `json:"field_mapping"`
 
 	// 连接调优（可选）
-	DialTimeoutSec    int `json:"dial_timeout_sec"`     // 连接超时秒数（默认 60）
-	MaxOpenConns      int `json:"max_open_conns"`       // 最大连接数（默认 10）
-	MaxIdleConns      int `json:"max_idle_conns"`       // 最大空闲连接数（默认 5）
+	DialTimeoutSec     int `json:"dial_timeout_sec"`      // 连接超时秒数（默认 60）
+	MaxOpenConns       int `json:"max_open_conns"`        // 最大连接数（默认 10）
+	MaxIdleConns       int `json:"max_idle_conns"`        // 最大空闲连接数（默认 5）
 	ConnMaxLifetimeSec int `json:"conn_max_lifetime_sec"` // 连接最大生命周期秒数（默认 1800）
 }
 

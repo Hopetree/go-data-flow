@@ -269,7 +269,7 @@ func TestFlowConfigValidation(t *testing.T) {
 			name: "missing source",
 			config: &FlowConfig{
 				Name: "test",
-				Sink:  ComponentSpec{Name: "mock"},
+				Sink: ComponentSpec{Name: "mock"},
 			},
 			expectErr: ErrSourceRequired,
 		},

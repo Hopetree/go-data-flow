@@ -20,8 +20,8 @@ func TestCollectorRegister(t *testing.T) {
 	collector := NewCollector("test")
 
 	tests := []struct {
-		name   string
-		desc   MetricDesc
+		name string
+		desc MetricDesc
 	}{
 		{
 			name: "Counter",

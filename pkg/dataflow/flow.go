@@ -37,18 +37,18 @@ type Flow[T any] struct {
 	flowMetrics *metrics.FlowMetrics
 
 	// 死信队列
-dlq *DLQ
+	dlq *DLQ
 }
 
 // NewFlow 创建一个新的 Flow 实例。
 func NewFlow[T any](config *FlowConfig, registry *Registry[T]) *Flow[T] {
 	config.SetDefaults()
 	return &Flow[T]{
-		config:              config,
-		registry:            registry,
-		processors:          make([]Processor[T], 0),
+		config:               config,
+		registry:             registry,
+		processors:           make([]Processor[T], 0),
 		processorConcurrency: make([]int, 0),
-		flowMetrics:         metrics.NewFlowMetrics(config.Name),
+		flowMetrics:          metrics.NewFlowMetrics(config.Name),
 	}
 }
 
@@ -291,7 +291,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 							}
 						}
 						m.RecordDuration(time.Since(start).Seconds())
-						}()
+					}()
 				}
 
 				// 将合并后的输出写入下一阶段
@@ -339,7 +339,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 		} // close if err
 		close(sinkDone) // 通知 wrapper 停止转发，切换为排空模式
 		m.RecordDuration(time.Since(start).Seconds())
-		}()
+	}()
 
 	// 等待完成
 	done := make(chan struct{})
@@ -407,6 +407,7 @@ func (f *Flow[T]) IsRunning() bool {
 // TotalOut = 管道最后一个有输出的组件的 output
 //   - 有 processor 时：最后一个 processor 的 RecordOut
 //   - 无 processor 时：source 的 RecordOut
+//
 // TotalError = StatsCounter 中所有组件错误之和
 // Components 为各组件独立明细。
 func (f *Flow[T]) Metrics() metrics.Summary {

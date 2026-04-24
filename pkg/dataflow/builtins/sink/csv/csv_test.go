@@ -35,7 +35,7 @@ func TestSink_Init(t *testing.T) {
 		{
 			name: "with separator",
 			config: Config{
-				FilePath: "/tmp/test-tab.csv",
+				FilePath:  "/tmp/test-tab.csv",
 				Separator: "\t",
 			},
 			wantErr: false,
@@ -200,7 +200,7 @@ func TestSink_CustomSeparator(t *testing.T) {
 
 	s := New()
 	configBytes, err := json.Marshal(Config{
-		FilePath: outputPath,
+		FilePath:  outputPath,
 		Separator: "\t",
 	})
 	if err != nil {

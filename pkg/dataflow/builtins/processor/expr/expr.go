@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/vm"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
+	"github.com/expr-lang/expr"
+	"github.com/expr-lang/expr/vm"
 )
 
 // Processor 根据表达式过滤记录
