@@ -437,11 +437,17 @@ func (f *Flow[T]) Metrics() metrics.Summary {
 		Components: f.flowMetrics.Snapshot(),
 	}
 
-	// 计算 TotalOut（最后一个有输出的组件的 RecordOut）
+	// 计算 TotalOut（使用 sink 的 RecordsIn 即实际被 sink 消费的记录数）
 	for _, comp := range summary.Components {
-		if comp.RecordsOut > summary.TotalOut {
-			summary.TotalOut = comp.RecordsOut
+		if comp.ComponentName == "sink" {
+			summary.TotalOut = comp.RecordsIn
+			return summary
 		}
+	}
+	// 无 sink 组件时回退到最后一个组件
+	if len(summary.Components) > 0 {
+		last := summary.Components[len(summary.Components)-1]
+		summary.TotalOut = last.RecordsOut
 	}
 
 	return summary
@@ -450,36 +456,39 @@ func (f *Flow[T]) Metrics() metrics.Summary {
 // Close 释放组件持有的资源。
 // 实现了 Closer 接口的组件会被调用 Close() 方法。
 func (f *Flow[T]) Close() error {
-	var err error
+	var errs []error
 	f.closeOnce.Do(func() {
 		// 关闭 source
 		if closer, ok := f.source.(Closer); ok {
-			if e := closer.Close(); e != nil && err == nil {
-				err = e
+			if e := closer.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 		// 关闭 processors
-		for _, p := range f.processors {
+		for i, p := range f.processors {
 			if closer, ok := p.(Closer); ok {
-				if e := closer.Close(); e != nil && err == nil {
-					err = e
+				if e := closer.Close(); e != nil {
+					errs = append(errs, fmt.Errorf("processor[%d]: %w", i, e))
 				}
 			}
 		}
 		// 关闭 sink
 		if closer, ok := f.sink.(Closer); ok {
-			if e := closer.Close(); e != nil && err == nil {
-				err = e
+			if e := closer.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 		// 关闭 DLQ
 		if f.dlq != nil {
-			if e := f.dlq.Close(); e != nil && err == nil {
-				err = e
+			if e := f.dlq.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 	})
-	return err
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // recordDuration 记录运行时长。
