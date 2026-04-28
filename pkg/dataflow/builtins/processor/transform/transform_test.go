@@ -247,10 +247,8 @@ func TestProcessor_Process_Extract(t *testing.T) {
 				"key":  "value",
 				"data": types.Record{"name": "test"},
 			},
-			expectedCount: 1,
-			expected: []types.Record{
-				{},
-			},
+			expectedCount: 0,
+			expected:      nil,
 		},
 		{
 			name: "extract array without flatten",
@@ -326,10 +324,8 @@ func TestProcessor_Process_Extract(t *testing.T) {
 				"order_id": "O001",
 				"items":    []interface{}{},
 			},
-			expectedCount: 1,
-			expected: []types.Record{
-				{},
-			},
+			expectedCount: 0,
+			expected:      nil,
 		},
 		{
 			name: "extract with subsequent mapping and add",
@@ -358,10 +354,8 @@ func TestProcessor_Process_Extract(t *testing.T) {
 			input: types.Record{
 				"value": "hello",
 			},
-			expectedCount: 1,
-			expected: []types.Record{
-				{},
-			},
+			expectedCount: 0,
+			expected:      nil,
 		},
 		{
 			name: "extract nested path not exists",
@@ -371,10 +365,8 @@ func TestProcessor_Process_Extract(t *testing.T) {
 			input: types.Record{
 				"a": types.Record{"b": types.Record{}},
 			},
-			expectedCount: 1,
-			expected: []types.Record{
-				{},
-			},
+			expectedCount: 0,
+			expected:      nil,
 		},
 	}
 

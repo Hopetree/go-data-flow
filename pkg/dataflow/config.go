@@ -75,12 +75,3 @@ func (c *FlowConfig) Validate() error {
 	return nil
 }
 
-// ValidateBuild validates the configuration during Build.
-// This is called internally by Flow.Build().
-func (c *FlowConfig) ValidateBuild() error {
-	if err := c.Validate(); err != nil {
-		return err
-	}
-	c.SetDefaults()
-	return nil
-}

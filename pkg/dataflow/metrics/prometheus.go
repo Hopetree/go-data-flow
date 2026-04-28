@@ -2,8 +2,10 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -294,7 +296,9 @@ func (s *Server) Start() error {
 
 // Stop 停止服务器
 func (s *Server) Stop() error {
-	return s.server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return s.server.Shutdown(ctx)
 }
 
 // DefaultCollector 默认指标收集器
@@ -314,5 +318,5 @@ func Default() *Collector {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
+	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }

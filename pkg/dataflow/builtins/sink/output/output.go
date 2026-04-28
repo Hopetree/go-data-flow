@@ -52,6 +52,7 @@ func (s *Sink) Init(config []byte) error {
 func (s *Sink) Consume(ctx context.Context, in <-chan types.Record) error {
 	for item := range in {
 		if s.limit > 0 && s.count >= s.limit {
+			logger.Warn("[output] 已达到输出限制 (%d)，丢弃剩余记录", s.limit)
 			return nil
 		}
 
