@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/Hopetree/go-data-flow/pkg/dataflow"
 	"github.com/Hopetree/go-data-flow/pkg/dataflow/builtins/types"
@@ -34,6 +35,9 @@ func New() *Processor {
 	return &Processor{}
 }
 
+// regexCache 缓存已编译的正则表达式，避免每条记录重复编译
+var regexCache sync.Map
+
 // 内置辅助函数
 var helperFuncs = map[string]interface{}{
 	// 字符串包含检查
@@ -48,13 +52,17 @@ var helperFuncs = map[string]interface{}{
 	"str_hasSuffix": func(s, suffix string) bool {
 		return strings.HasSuffix(s, suffix)
 	},
-	// 正则匹配
+	// 正则匹配（使用缓存避免重复编译正则表达式）
 	"str_matches": func(s, pattern string) bool {
-		matched, err := regexp.MatchString(pattern, s)
-		if err != nil {
-			return false
+		re, ok := regexCache.Load(pattern)
+		if !ok {
+			compiled, err := regexp.Compile(pattern)
+			if err != nil {
+				return false
+			}
+			re, _ = regexCache.LoadOrStore(pattern, compiled)
 		}
-		return matched
+		return re.(*regexp.Regexp).MatchString(s)
 	},
 }
 

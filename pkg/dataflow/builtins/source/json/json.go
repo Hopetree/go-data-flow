@@ -99,6 +99,7 @@ func (s *Source) readFile(ctx context.Context, filePath string, out chan<- types
 // readJSONLines 读取 JSON Lines 格式文件
 func (s *Source) readJSONLines(ctx context.Context, file *os.File, out chan<- types.Record) (int64, error) {
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024) // 最大 10MB 单行
 	var count int64
 	batchCount := 0
 
