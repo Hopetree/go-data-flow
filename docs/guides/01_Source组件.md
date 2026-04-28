@@ -122,11 +122,15 @@ CSV 文件，- 第一行为表头
 
 ### 配置项
 
-| 配置项 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| path | string | 是 | CSV 文件路径 |
-| delimiter | string | 否 | 逗号 (,) | 字段分隔符 |
-| skip_header | bool | 否 | false | 是否跳过表头 |
+| 配置项 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| file_path | string | 是 | - | CSV 文件路径，支持 glob 模式 |
+| separator | string | 否 | `,` | 字段分隔符 |
+| has_header | bool | 否 | true | 是否有标题行（默认 true） |
+| skip_rows | int | 否 | 0 | 跳过的行数（在标题行之前） |
+| column_types | map | 否 | - | 列类型映射，如 `{"id": "int", "price": "float"}` |
+
+> **注意**：`has_header` 默认为 `true`。如需设置为 `false`，在 YAML 中需显式指定 `has_header: false`。
 
 ### 示例
 
@@ -134,8 +138,17 @@ CSV 文件，- 第一行为表头
 source:
   name: source-csv-file
   config:
-    path: ./data/input.csv
-    delimiter: ","
+    file_path: ./data/*.csv
+    separator: ","
+```
+
+**无标题行的 CSV：**
+```yaml
+source:
+  name: source-csv-file
+  config:
+    file_path: ./data/raw.csv
+    has_header: false
 ```
 
 **CSV 文件示例：**
@@ -171,6 +184,8 @@ JSON 文件，支持两种格式：
 | file_path | string | 是 | - | JSON 文件路径，支持 glob 模式 |
 | format | string | 否 | lines | 文件格式: `lines` (JSON Lines) 或 `array` (JSON 数组) |
 | batch_size | int | 否 | 0 | 每次读取的批次大小，0 表示无限制 |
+
+> **注意**：JSON Lines 格式下，单行记录最大支持 10MB。
 
 ### 示例
 

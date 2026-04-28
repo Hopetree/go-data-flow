@@ -31,7 +31,7 @@ type Config struct {
 	// Separator 字段分隔符，默认为逗号
 	Separator string `json:"separator"`
 	// HasHeader 是否有标题行，默认 true
-	HasHeader bool `json:"has_header"`
+	HasHeader *bool `json:"has_header"`
 	// SkipRows 跳过的行数（在标题行之前）
 	SkipRows int `json:"skip_rows"`
 	// ColumnTypes 列类型映射，如 {"id": "int", "price": "float"}
@@ -54,9 +54,8 @@ func (s *Source) Init(config []byte) error {
 	}
 
 	s.filePath = cfg.FilePath
-	s.hasHeader = cfg.HasHeader
-	if !s.hasHeader {
-		s.hasHeader = true // 默认有标题
+	if cfg.HasHeader != nil {
+		s.hasHeader = *cfg.HasHeader
 	}
 	s.skipRows = cfg.SkipRows
 	s.columnTypes = cfg.ColumnTypes

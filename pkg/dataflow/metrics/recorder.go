@@ -118,7 +118,7 @@ func (m *ComponentMetrics) AddCounter(name string, value float64, labels prometh
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.SetGauge(name, value, mergedLabels)
+	m.promCollector.AddCounter(name, value, mergedLabels)
 }
 
 // SetGauge 设置自定义 Gauge 指标
@@ -148,7 +148,7 @@ func (m *ComponentMetrics) ObserveHistogram(name string, value float64, labels p
 	for k, v := range labels {
 		mergedLabels[k] = v
 	}
-	m.promCollector.ObserveSummary(name, value, mergedLabels)
+	m.promCollector.ObserveHistogram(name, value, mergedLabels)
 }
 
 // ObserveSummary 观察自定义 Summary 指标

@@ -357,9 +357,9 @@ processors:
 
 | 情况 | 处理方式 |
 |------|---------|
-| extract 字段不存在 | 输出空记录 `{}` |
-| extract 字段是基本类型 | 输出空记录 `{}` |
-| extract 数组为空 | 输出空记录 `{}` |
+| extract 字段不存在 | 跳过该记录（不输出） |
+| extract 字段是基本类型 | 跳过该记录（不输出） |
+| extract 数组为空 | 跳过该记录（不输出） |
 | extract_flatten 展开非对象元素 | 包装为 `{"_value": 元素值}` |
 
 ### 并发特性
@@ -424,7 +424,7 @@ processors:
 | str_contains(s, substr) | 字符串包含 | `str_contains(message, 'error')` |
 | str_hasPrefix(s, prefix) | 前缀匹配 | `str_hasPrefix(path, '/api/')` |
 | str_hasSuffix(s, suffix) | 后缀匹配 | `str_hasSuffix(email, '@company.com')` |
-| str_matches(s, pattern) | 正则匹配 | `str_matches(user_id, '^user-\\d+$')` |
+| str_matches(s, pattern) | 正则匹配（正则表达式自动缓存编译，重复使用同一模式无额外开销） | `str_matches(user_id, '^user-\\d+$')` |
 
 #### 字段检查
 

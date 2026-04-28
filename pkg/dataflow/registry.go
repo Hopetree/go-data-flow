@@ -1,6 +1,9 @@
 package dataflow
 
-import "sync"
+import (
+	"sort"
+	"sync"
+)
 
 // Registry manages component registrations.
 type Registry[T any] struct {
@@ -78,6 +81,7 @@ func (r *Registry[T]) ListSources() []string {
 	for name := range r.sources {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names
 }
 
@@ -89,6 +93,7 @@ func (r *Registry[T]) ListProcessors() []string {
 	for name := range r.processors {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names
 }
 
@@ -100,6 +105,7 @@ func (r *Registry[T]) ListSinks() []string {
 	for name := range r.sinks {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names
 }
 

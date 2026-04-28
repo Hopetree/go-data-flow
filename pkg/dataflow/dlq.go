@@ -15,12 +15,13 @@ type DLQRecord = map[string]interface{}
 
 // DLQ 管理死信队列，将组件错误路由到指定的 sink
 type DLQ struct {
-	sink    Sink[types.Record]
-	ch      chan DLQRecord
-	wg      sync.WaitGroup
-	mu      sync.Mutex
-	count   int
-	enabled bool
+	sink      Sink[types.Record]
+	ch        chan DLQRecord
+	wg        sync.WaitGroup
+	mu        sync.Mutex
+	count     int
+	enabled   bool
+	closeOnce sync.Once
 }
 
 // NewDLQ 创建 DLQ 实例。
@@ -53,6 +54,10 @@ func NewDLQ(cfg DLQConfig, registry *Registry[types.Record]) (*DLQ, error) {
 	dlq.wg.Add(1)
 	go func() {
 		defer dlq.wg.Done()
+		// 创建带超时的 context，防止 sink 阻塞导致 Close 永久等待
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
 		// 创建适配通道：将 DLQRecord 转换为 types.Record
 		recordCh := make(chan types.Record, 100)
 		var innerWg sync.WaitGroup
@@ -60,14 +65,18 @@ func NewDLQ(cfg DLQConfig, registry *Registry[types.Record]) (*DLQ, error) {
 		go func() {
 			defer innerWg.Done()
 			for record := range dlq.ch {
-				recordCh <- record
+				select {
+				case recordCh <- record:
+				case <-ctx.Done():
+					return
+				}
 			}
 			close(recordCh)
 		}()
 
 		// 消费 DLQ 记录
 		// DLQ sink 出错只记录日志不中断（避免影响主流程）
-		if err := sink.Consume(context.Background(), recordCh); err != nil {
+		if err := sink.Consume(ctx, recordCh); err != nil {
 			logger.Warn("DLQ sink 写入错误: %v", err)
 		}
 		innerWg.Wait()
@@ -119,13 +128,16 @@ func (d *DLQ) Close() error {
 		return nil
 	}
 
-	// 关闭 channel，触发消费 goroutine 结束
-	close(d.ch)
-	// 等待消费完毕
-	d.wg.Wait()
-	// 关闭 sink
-	if closer, ok := d.sink.(Closer); ok {
-		return closer.Close()
-	}
-	return nil
+	var err error
+	d.closeOnce.Do(func() {
+		// 关闭 channel，触发消费 goroutine 结束
+		close(d.ch)
+		// 等待消费完毕（内部有 30s 超时保护）
+		d.wg.Wait()
+		// 关闭 sink
+		if closer, ok := d.sink.(Closer); ok {
+			err = closer.Close()
+		}
+	})
+	return err
 }

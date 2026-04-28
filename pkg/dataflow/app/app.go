@@ -4,10 +4,12 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
@@ -243,6 +245,19 @@ func (a *App) runSingle(ctx context.Context, configFile string) error {
 
 	logger.Info("[%s] 开始运行", config.Name)
 	if err := flow.Run(ctx); err != nil {
+		// 运行失败也输出已处理的记录数
+		metrics := flow.Metrics()
+		logger.Info("[%s] 失败: 输入=%d, 输出=%d, 错误=%d, 耗时=%dms",
+			config.Name, metrics.TotalIn, metrics.TotalOut, metrics.TotalError, metrics.Duration.Milliseconds())
+
+		if dlq := flow.DLQ(); dlq != nil && dlq.Enabled() {
+			logger.Info("[%s] DLQ: %d 条错误记录已写入", config.Name, dlq.Count())
+		}
+
+		closeErr := flow.Close()
+		if closeErr != nil {
+			logger.Warn("[%s] 关闭时发生错误: %v", config.Name, closeErr)
+		}
 		return fmt.Errorf("[%s] 运行失败: %w", config.Name, err)
 	}
 
@@ -282,13 +297,16 @@ func (a *App) runParallel(ctx context.Context, configFiles []string) error {
 		close(errCh)
 	}()
 
-	var lastErr error
+	var errs []error
 	for err := range errCh {
-		lastErr = err
+		errs = append(errs, err)
 		logger.Error("错误: %v", err)
 	}
 
-	return lastErr
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // runSequential 顺序运行多个 Flow
@@ -469,29 +487,23 @@ func LoadAppConfig(path string) (*Config, error) {
 }
 
 // CheckEnvVars 检查配置文件中引用的环境变量是否都已设置
+// 支持检查 ${VAR} 和 $VAR 两种语法
 // 返回缺失的环境变量列表，空列表表示全部满足
 func CheckEnvVars(configFiles []string) []string {
 	var missing []string
 	checked := make(map[string]bool)
+	re := regexp.MustCompile(`\$\{([^}]+)\}|\$([a-zA-Z_][a-zA-Z0-9_]*)`)
 	for _, path := range configFiles {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			continue
 		}
-		// 从原始内容中提取 ${VAR} 变量名（在展开前检查）
-		s := string(data)
-		for {
-			start := strings.Index(s, "${")
-			if start == -1 {
-				break
+		matches := re.FindAllStringSubmatch(string(data), -1)
+		for _, m := range matches {
+			varName := m[1] // ${VAR} 匹配组
+			if varName == "" {
+				varName = m[2] // $VAR 匹配组
 			}
-			s = s[start+2:]
-			end := strings.Index(s, "}")
-			if end == -1 {
-				break
-			}
-			varName := s[:end]
-			s = s[end+1:]
 			if varName == "" || checked[varName] {
 				continue
 			}
@@ -511,7 +523,7 @@ func ValidateConfigs(configFiles []string) error {
 		if err != nil {
 			return fmt.Errorf("[%s] 配置解析失败: %w", path, err)
 		}
-		if err := config.ValidateBuild(); err != nil {
+		if err := config.Validate(); err != nil {
 			return fmt.Errorf("[%s] 配置验证失败: %w", config.Name, err)
 		}
 		logger.Info("[%s] 配置验证通过", config.Name)

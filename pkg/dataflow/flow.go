@@ -147,6 +147,18 @@ func (f *Flow[T]) Build() error {
 	return nil
 }
 
+// recoverPanic 捕获 goroutine 中的 panic 并转为 error 发送到 errCh
+// 确保即使组件 panic，wg.Done() 也会被调用，避免 goroutine 泄漏
+func recoverPanic(errCh chan error, component string) {
+	if r := recover(); r != nil {
+		err := fmt.Errorf("%s panic: %v", component, r)
+		select {
+		case errCh <- err:
+		default:
+		}
+	}
+}
+
 // Run 执行数据管道。
 // 如果 flow 未构建、已在运行或任何组件失败则返回错误。
 // 阻塞直到所有数据处理完成或 context 被取消。
@@ -185,6 +197,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer recoverPanic(errCh, "source")
 		defer close(channels[0])
 		m := f.flowMetrics.GetOrCreate("source")
 		n, err := f.source.Read(sourceCtx, channels[0])
@@ -210,6 +223,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 			wg.Add(1)
 			go func(idx int, p Processor[T], in <-chan T, out chan<- T) {
 				defer wg.Done()
+				defer recoverPanic(errCh, fmt.Sprintf("processor[%d]", idx))
 				m := f.flowMetrics.GetOrCreate(fmt.Sprintf("processor[%d]", idx))
 
 				// 包装输入通道，计数 RecordIn
@@ -249,6 +263,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 			wg.Add(1)
 			go func(idx int, p Processor[T], in <-chan T, out chan<- T, workers int) {
 				defer wg.Done()
+				defer recoverPanic(errCh, fmt.Sprintf("processor[%d]", idx))
 				defer close(out)
 
 				m := f.flowMetrics.GetOrCreate(fmt.Sprintf("processor[%d]", idx))
@@ -309,6 +324,7 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer recoverPanic(errCh, "sink")
 		m := f.flowMetrics.GetOrCreate("sink")
 
 		// 创建包装通道：计数 sink 从通道读取的记录数
@@ -319,12 +335,16 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 		go func() {
 			defer close(countedCh)
 			for item := range sinkInCh {
+				m.RecordIn(1)
+				// sink 完成后不再转发数据，直接排空
 				select {
 				case <-sinkDone:
-					// sink 已完成，只排空上游通道并计数，不再转发
-					m.RecordIn(1)
+					continue
+				default:
+				}
+				select {
 				case countedCh <- item:
-					m.RecordIn(1)
+				case <-sinkDone:
 				}
 			}
 		}()
@@ -379,14 +399,9 @@ func (f *Flow[T]) Run(ctx context.Context) error {
 			}
 			return errors.Join(errs...)
 		case <-time.After(shutdownTimeout):
-			// 超时强制退出
+			// 超时强制退出：不再等待 errCh（wg.Wait() 可能永远不返回）
 			f.recordDuration()
-			var errs []error
-			errs = append(errs, ctx.Err())
-			errs = append(errs, fmt.Errorf("graceful shutdown timed out after %v", shutdownTimeout))
-			for e := range errCh {
-				errs = append(errs, e)
-			}
+			errs := []error{ctx.Err(), fmt.Errorf("graceful shutdown timed out after %v", shutdownTimeout)}
 			return errors.Join(errs...)
 		}
 	}
@@ -422,11 +437,17 @@ func (f *Flow[T]) Metrics() metrics.Summary {
 		Components: f.flowMetrics.Snapshot(),
 	}
 
-	// 计算 TotalOut（最后一个有输出的组件的 RecordOut）
+	// 计算 TotalOut（使用 sink 的 RecordsIn 即实际被 sink 消费的记录数）
 	for _, comp := range summary.Components {
-		if comp.RecordsOut > summary.TotalOut {
-			summary.TotalOut = comp.RecordsOut
+		if comp.ComponentName == "sink" {
+			summary.TotalOut = comp.RecordsIn
+			return summary
 		}
+	}
+	// 无 sink 组件时回退到最后一个组件
+	if len(summary.Components) > 0 {
+		last := summary.Components[len(summary.Components)-1]
+		summary.TotalOut = last.RecordsOut
 	}
 
 	return summary
@@ -435,36 +456,39 @@ func (f *Flow[T]) Metrics() metrics.Summary {
 // Close 释放组件持有的资源。
 // 实现了 Closer 接口的组件会被调用 Close() 方法。
 func (f *Flow[T]) Close() error {
-	var err error
+	var errs []error
 	f.closeOnce.Do(func() {
 		// 关闭 source
 		if closer, ok := f.source.(Closer); ok {
-			if e := closer.Close(); e != nil && err == nil {
-				err = e
+			if e := closer.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 		// 关闭 processors
-		for _, p := range f.processors {
+		for i, p := range f.processors {
 			if closer, ok := p.(Closer); ok {
-				if e := closer.Close(); e != nil && err == nil {
-					err = e
+				if e := closer.Close(); e != nil {
+					errs = append(errs, fmt.Errorf("processor[%d]: %w", i, e))
 				}
 			}
 		}
 		// 关闭 sink
 		if closer, ok := f.sink.(Closer); ok {
-			if e := closer.Close(); e != nil && err == nil {
-				err = e
+			if e := closer.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 		// 关闭 DLQ
 		if f.dlq != nil {
-			if e := f.dlq.Close(); e != nil && err == nil {
-				err = e
+			if e := f.dlq.Close(); e != nil {
+				errs = append(errs, e)
 			}
 		}
 	})
-	return err
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // recordDuration 记录运行时长。

@@ -53,10 +53,15 @@ func main() {
 	app.BuildTime = BuildTime
 	app.GitCommit = GitCommit
 
+	os.Exit(run())
+}
+
+// run 执行主逻辑，返回退出码
+func run() int {
 	// 显示版本
 	if showVersion {
 		app.PrintVersion()
-		return
+		return 0
 	}
 
 	// 创建应用
@@ -67,6 +72,7 @@ func main() {
 		Configs:     configs,
 		EnvFile:     envFile,
 	})
+	defer logger.Close() //nolint:errcheck
 
 	// 注册内置组件
 	app.RegisterAllBuiltins(application.Registry())
@@ -74,7 +80,7 @@ func main() {
 	// 列出组件
 	if listOnly {
 		application.ListComponents()
-		return
+		return 0
 	}
 
 	// 收集配置文件
@@ -84,19 +90,19 @@ func main() {
 	if listFlows {
 		if len(configFiles) == 0 {
 			fmt.Println("没有找到配置文件")
-			os.Exit(1)
+			return 1
 		}
 		for _, f := range configFiles {
 			fmt.Println(f)
 		}
-		return
+		return 0
 	}
 
 	// --env-check：检查环境变量是否已设置
 	if envCheckOnly {
 		if len(configFiles) == 0 {
 			fmt.Println("没有找到配置文件")
-			os.Exit(1)
+			return 1
 		}
 		missing := app.CheckEnvVars(configFiles)
 		if len(missing) > 0 {
@@ -104,30 +110,30 @@ func main() {
 			for _, v := range missing {
 				fmt.Printf("  %s\n", v)
 			}
-			os.Exit(1)
+			return 1
 		}
 		fmt.Println("所有环境变量检查通过")
-		return
+		return 0
 	}
 
 	// --validate：只验证配置，不执行 Flow
 	if validateOnly {
 		if len(configFiles) == 0 {
 			fmt.Println("没有找到配置文件")
-			os.Exit(1)
+			return 1
 		}
 		if err := app.ValidateConfigs(configFiles); err != nil {
 			fmt.Printf("配置验证失败: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		fmt.Println("所有配置验证通过")
-		return
+		return 0
 	}
 
 	// 检查是否有配置
 	if len(configFiles) == 0 {
 		app.PrintUsage()
-		os.Exit(1)
+		return 1
 	}
 
 	// 创建上下文
@@ -136,6 +142,7 @@ func main() {
 	// 运行应用
 	if err := application.Run(ctx); err != nil {
 		logger.Error("运行失败: %v", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }

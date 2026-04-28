@@ -39,16 +39,18 @@ type Logger struct {
 var (
 	mu            sync.RWMutex
 	defaultLogger *Logger
-	once          sync.Once
 )
 
 // Init 初始化全局日志器
 func Init(cfg Config) error {
-	var err error
-	once.Do(func() {
-		defaultLogger, err = NewLogger(cfg)
-	})
-	return err
+	l, err := NewLogger(cfg)
+	if err != nil {
+		return err
+	}
+	mu.Lock()
+	defaultLogger = l
+	mu.Unlock()
+	return nil
 }
 
 // NewLogger 创建新的日志记录器
@@ -158,82 +160,105 @@ func parseLevel(l string) zapcore.Level {
 	}
 }
 
-// Global 返回全局日志器
+// Global 返回全局日志器，未初始化时返回 nil
 func Global() *Logger {
 	mu.RLock()
 	l := defaultLogger
 	mu.RUnlock()
-	if l == nil {
-		// 如果未初始化，返回默认配置的日志器
-		if err := Init(Config{}); err != nil {
-			// 初始化失败，返回 nil（调用方需处理）
-			return nil
-		}
-		mu.RLock()
-		l = defaultLogger
-		mu.RUnlock()
-	}
 	return l
 }
 
 // Sync 返回底层的 zap.Logger（用于需要结构化日志的场景）
 func Sync() *zap.Logger {
-	return Global().Desugar()
+	if l := Global(); l != nil {
+		return l.Desugar()
+	}
+	return nil
 }
 
 // Debug 记录调试日志
 func Debug(format string, args ...interface{}) {
-	Global().Debugf(format, args...)
+	if l := Global(); l != nil {
+		l.Debugf(format, args...)
+	}
 }
 
 // Info 记录信息日志
 func Info(format string, args ...interface{}) {
-	Global().Infof(format, args...)
+	if l := Global(); l != nil {
+		l.Infof(format, args...)
+	}
 }
 
 // Warn 记录警告日志
 func Warn(format string, args ...interface{}) {
-	Global().Warnf(format, args...)
+	if l := Global(); l != nil {
+		l.Warnf(format, args...)
+	}
 }
 
 // Error 记录错误日志
 func Error(format string, args ...interface{}) {
-	Global().Errorf(format, args...)
+	if l := Global(); l != nil {
+		l.Errorf(format, args...)
+	}
 }
 
 // Fatal 记录致命错误并退出
 func Fatal(format string, args ...interface{}) {
-	Global().Fatalf(format, args...)
+	if l := Global(); l != nil {
+		l.Fatalf(format, args...)
+	}
 }
 
 // Panic 记录 panic 日志
 func Panic(format string, args ...interface{}) {
-	Global().Panicf(format, args...)
+	if l := Global(); l != nil {
+		l.Panicf(format, args...)
+	}
 }
 
 // With 返回带有字段上下文的日志器
 func With(fields ...interface{}) *Logger {
+	l := Global()
+	if l == nil {
+		return nil
+	}
 	return &Logger{
-		SugaredLogger: Global().With(fields...),
-		config:        Global().config,
+		SugaredLogger: l.With(fields...),
+		config:        l.config,
 	}
 }
 
 // SetLevel 设置日志级别
 func SetLevel(level string) {
-	cfg := Global().config
+	mu.Lock()
+	old := defaultLogger
+	mu.Unlock()
+
+	if old == nil {
+		return
+	}
+
+	cfg := old.config
 	cfg.Level = level
 	newLogger, err := NewLogger(cfg)
 	if err == nil {
 		mu.Lock()
 		defaultLogger = newLogger
 		mu.Unlock()
+		// 关闭旧 logger 刷出缓冲区（忽略错误，旧 logger 已被替换）
+		_ = old.Sync() //nolint:errcheck
 	}
 }
 
 // Close 关闭日志器（刷新缓冲区）
 func Close() error {
-	return Global().Sync()
+	l := Global()
+	if l == nil {
+		return nil
+	}
+	return l.Sync()
 }
 
 // Printf 兼容标准 log（记录 Info 级别）

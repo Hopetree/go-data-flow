@@ -100,8 +100,7 @@ func (p *Processor) extractAndTransform(record types.Record, cfg Config) ([]type
 	// 提取指定字段
 	extracted := p.getNestedValue(record, cfg.Extract)
 	if extracted == nil {
-		// 字段不存在，返回空记录
-		return []types.Record{{}}, nil
+		return nil, nil // 跳过不存在的字段
 	}
 
 	// 检查提取的值类型
@@ -128,7 +127,7 @@ func (p *Processor) extractAndTransform(record types.Record, cfg Config) ([]type
 				}
 			}
 			if len(results) == 0 {
-				return []types.Record{{}}, nil
+				return nil, nil // 跳过空数组
 			}
 			return results, nil
 		}
@@ -137,8 +136,7 @@ func (p *Processor) extractAndTransform(record types.Record, cfg Config) ([]type
 		return []types.Record{result}, nil
 
 	default:
-		// 其他类型（基本类型），返回空记录
-		return []types.Record{{}}, nil
+		return nil, nil // 跳过非对象非数组类型
 	}
 }
 
