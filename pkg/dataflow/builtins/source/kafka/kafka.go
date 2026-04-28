@@ -36,8 +36,9 @@ type Config struct {
 
 // consumerHandler 实现 sarama.ConsumerGroupHandler
 type consumerHandler struct {
-	messages chan *sarama.ConsumerMessage
-	ready    chan struct{}
+	messages  chan *sarama.ConsumerMessage
+	ready     chan struct{}
+	readyOnce sync.Once
 }
 
 func newConsumerHandler() *consumerHandler {
@@ -48,8 +49,11 @@ func newConsumerHandler() *consumerHandler {
 }
 
 // Setup 实现 sarama.ConsumerGroupHandler 接口，标记消费者就绪
+// 使用 sync.Once 防止 rebalance 时重复 close 导致 panic
 func (h *consumerHandler) Setup(sarama.ConsumerGroupSession) error {
-	close(h.ready)
+	h.readyOnce.Do(func() {
+		close(h.ready)
+	})
 	return nil
 }
 
@@ -156,7 +160,14 @@ func (s *Source) Read(ctx context.Context, out chan<- types.Record) (int64, erro
 	}()
 
 	// 等待消费者就绪
-	<-s.handler.ready
+	select {
+	case <-s.handler.ready:
+		// 消费者就绪
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	case err := <-errCh:
+		return 0, err
+	}
 	logger.Info("[kafka] 已连接到 %v, topic=%s, group=%s", s.config.Brokers, s.config.Topic, s.config.GroupID)
 
 	// 处理消息
@@ -212,7 +223,9 @@ func (s *Source) Close() error {
 	defer s.mu.Unlock()
 
 	if s.consumer != nil {
-		return s.consumer.Close()
+		err := s.consumer.Close()
+		s.consumer = nil
+		return err
 	}
 	return nil
 }
