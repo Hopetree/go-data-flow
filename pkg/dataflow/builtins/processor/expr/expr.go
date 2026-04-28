@@ -62,7 +62,7 @@ var helperFuncs = map[string]interface{}{
 			}
 			re, _ = regexCache.LoadOrStore(pattern, compiled)
 		}
-		return re.(*regexp.Regexp).MatchString(s)
+		return re.(*regexp.Regexp).MatchString(s) //nolint:errcheck
 	},
 }
 

@@ -72,7 +72,7 @@ func run() int {
 		Configs:     configs,
 		EnvFile:     envFile,
 	})
-	defer logger.Close()
+	defer logger.Close() //nolint:errcheck
 
 	// 注册内置组件
 	app.RegisterAllBuiltins(application.Registry())

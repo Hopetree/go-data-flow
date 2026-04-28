@@ -247,8 +247,8 @@ func SetLevel(level string) {
 		mu.Lock()
 		defaultLogger = newLogger
 		mu.Unlock()
-		// 关闭旧 logger 刷出缓冲区
-		_ = old.Sync()
+		// 关闭旧 logger 刷出缓冲区（忽略错误，旧 logger 已被替换）
+		_ = old.Sync() //nolint:errcheck
 	}
 }
 
