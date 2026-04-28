@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -243,6 +244,19 @@ func (a *App) runSingle(ctx context.Context, configFile string) error {
 
 	logger.Info("[%s] 开始运行", config.Name)
 	if err := flow.Run(ctx); err != nil {
+		// 运行失败也输出已处理的记录数
+		metrics := flow.Metrics()
+		logger.Info("[%s] 失败: 输入=%d, 输出=%d, 错误=%d, 耗时=%dms",
+			config.Name, metrics.TotalIn, metrics.TotalOut, metrics.TotalError, metrics.Duration.Milliseconds())
+
+		if dlq := flow.DLQ(); dlq != nil && dlq.Enabled() {
+			logger.Info("[%s] DLQ: %d 条错误记录已写入", config.Name, dlq.Count())
+		}
+
+		closeErr := flow.Close()
+		if closeErr != nil {
+			logger.Warn("[%s] 关闭时发生错误: %v", config.Name, closeErr)
+		}
 		return fmt.Errorf("[%s] 运行失败: %w", config.Name, err)
 	}
 
@@ -282,13 +296,16 @@ func (a *App) runParallel(ctx context.Context, configFiles []string) error {
 		close(errCh)
 	}()
 
-	var lastErr error
+	var errs []error
 	for err := range errCh {
-		lastErr = err
+		errs = append(errs, err)
 		logger.Error("错误: %v", err)
 	}
 
-	return lastErr
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // runSequential 顺序运行多个 Flow
