@@ -7,6 +7,37 @@
 - **MINOR**: 新功能（向下兼容）
 - **PATCH**: Bug 修复、文档、构建等
 
+## [v0.2.6] - 2026-04-28
+
+### 修复
+
+- **flow.go**: 所有组件 goroutine 添加 panic recovery，防止 panic 导致应用挂死
+- **flow.go**: 修复关闭超时路径死锁，超时后立即返回而非无限等待 errCh
+- **flow.go**: 修复 sink wrapper 的 select 语义，sink 完成后正确排空上游数据
+- **flow.go**: `Close()` 使用 `errors.Join` 聚合所有组件关闭错误
+- **flow.go**: 修复 `Metrics().TotalOut` 计算错误，改为使用 sink 的 RecordsIn
+- **app.go**: `runSingle` 错误时确保调用 `flow.Close()` 释放资源
+- **app.go**: `runParallel` 使用 `errors.Join` 聚合所有并行 Flow 错误
+- **dlq.go**: 添加 `sync.Once` 防止双重关闭 panic
+- **dlq.go**: DLQ sink 使用 30s 超时 context，防止阻塞主流程关闭
+- **metrics/recorder.go**: 修复 `AddCounter` 错误调用 `SetGauge` 的复制粘贴 bug
+- **metrics/recorder.go**: 修复 `ObserveHistogram` 错误调用 `ObserveSummary` 的复制粘贴 bug
+- **logger.go**: 移除 `sync.Once`，支持重新初始化
+- **logger.go**: 所有包级日志函数添加 nil 保护，防止未初始化时 panic
+- **logger.go**: `SetLevel()` 修复旧 logger 文件句柄泄漏
+- **kafka.go**: 添加 `sync.Once` 防止 rebalance 时 `close(ready)` panic
+- **kafka.go**: `Read()` 等待 ready 时增加 `ctx.Done()` 检查
+- **kafka.go**: `Close()` 关闭 consumer 后置 nil 防止双重关闭
+- **csv.go**: 修复 `has_header: false` 无法设置的问题（改用 `*bool`）
+- **json/source**: JSON Lines scanner 缓冲区从默认 64KB 增加到 10MB
+- **output/sink**: 达到输出限制时记录警告日志
+- **transform**: `extract` 字段不存在/为空/非对象时跳过记录而非输出空 `{}`
+- **prometheus**: `Server.Stop()` 使用 `Shutdown` 优雅关闭替代 `Close`
+- **app.go**: `CheckEnvVars` 同时检查 `${VAR}` 和 `$VAR` 两种语法
+- **config.go**: 移除未使用的 `ValidateBuild` 死代码
+- **registry.go**: `ListSources/ListProcessors/ListSinks` 返回结果按名称排序
+- **main.go**: 重构为 `run()` 模式，确保所有退出路径刷新日志缓冲区
+
 ## [v0.2.5] - 2026-04-23
 
 ### 新功能
